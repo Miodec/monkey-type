@@ -785,6 +785,10 @@ $("#wordsInput").on("input", function (event) {
 
   let char = event.target.value.normalize();
 
+  if (char.length == 0) {
+    return;
+  }
+
   if (Config.capsLockBackspace && isCapsLockHeld) {
     //swap case
     char = char == char.toLowerCase() ? char.toUpperCase() : char.toLowerCase();
