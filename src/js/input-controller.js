@@ -360,41 +360,7 @@ function handleSpace() {
   }
 }
 
-function handleAlpha(char) {
-  if (char === "\n" && Funbox.active === "58008") {
-    char = " ";
-  }
-
-  if (char === " ") {
-    handleSpace();
-
-    //insert space for expert and master or strict space,
-    //otherwise dont do anything
-    if (Config.difficulty !== "normal" || Config.strictSpace) {
-      if (dontInsertSpace) {
-        dontInsertSpace = false;
-        return;
-      }
-    } else {
-      return;
-    }
-  }
-
-  //start the test
-  if (
-    TestLogic.input.current == "" &&
-    TestLogic.input.history.length == 0 &&
-    !TestLogic.active
-  ) {
-    if (!TestLogic.startTest()) return;
-  } else {
-    if (!TestLogic.active) return;
-  }
-
-  Focus.set(true);
-  Caret.stopAnimation();
-
-  //check if the char typed was correct
+function isCharCorrect(char) {
   let thisCharCorrect;
   let nextCharInWord;
   if (Config.mode != "zen") {
@@ -459,16 +425,51 @@ function handleAlpha(char) {
     thisCharCorrect = false;
   }
 
+  return thisCharCorrect;
+}
+
+function handleAlpha(char) {
+  if (char === "\n" && Funbox.active === "58008") {
+    char = " ";
+  }
+
+  if (char === " ") {
+    handleSpace();
+
+    //insert space for expert and master or strict space,
+    //otherwise dont do anything
+    if (Config.difficulty !== "normal" || Config.strictSpace) {
+      if (dontInsertSpace) {
+        dontInsertSpace = false;
+        return;
+      }
+    } else {
+      return;
+    }
+  }
+
+  //start the test
+  if (
+    TestLogic.input.current == "" &&
+    TestLogic.input.history.length == 0 &&
+    !TestLogic.active
+  ) {
+    if (!TestLogic.startTest()) return;
+  } else {
+    if (!TestLogic.active) return;
+  }
+
+  Focus.set(true);
+  Caret.stopAnimation();
+
+  let thisCharCorrect = isCharCorrect(char);
+
   if (!thisCharCorrect) {
     TestStats.incrementAccuracy(false);
     TestStats.incrementKeypressErrors();
-    // currentError.count++;
-    // currentError.words.push(TestLogic.words.currentIndex);
-    thisCharCorrect = false;
     TestStats.pushMissedWord(TestLogic.words.getCurrent());
   } else {
     TestStats.incrementAccuracy(true);
-    thisCharCorrect = true;
     if (Config.mode == "zen") {
       //making the input visible to the user
       $("#words .active").append(`<letter class="correct">${char}</letter>`);
@@ -508,8 +509,6 @@ function handleAlpha(char) {
   }
   TestStats.incrementKeypressCount();
   TestStats.pushKeypressWord(TestLogic.words.currentIndex);
-  // currentKeypress.count++;
-  // currentKeypress.words.push(TestLogic.words.currentIndex);
 
   if (Config.stopOnError == "letter" && !thisCharCorrect) {
     return;
@@ -779,14 +778,22 @@ $("#wordsInput").on("input", function (event) {
     return;
   }
 
-  let char = event.target.value;
+  let char = event.target.value.normalize();
 
   if (Config.capsLockBackspace && isCapsLockHeld) {
     //swap case
     char = char == char.toLowerCase() ? char.toUpperCase() : char.toLowerCase();
   }
 
-  handleAlpha(char);
-
-  event.target.value = "";
+  //the regex tests against known non-combining diacritics and also the Spacing Modifier Letters unicode block
+  //this is to ignore ones that may be pre-inserted by some input systems
+  if (
+    char.length > 1 ||
+    isCharCorrect(char) ||
+    !/[\u02B0-\u02FF`´^¨~]/.test(char)
+  ) {
+    char = char.charAt(0);
+    handleAlpha(char);
+    event.target.value = "";
+  }
 });
