@@ -99,6 +99,9 @@ function handleTab(event) {
 function handleBackspace(event) {
   event.preventDefault();
   if (!TestLogic.active) return;
+
+  $("#wordsInput").val("");
+
   if (
     TestLogic.input.current == "" &&
     TestLogic.input.history.length > 0 &&
@@ -429,6 +432,8 @@ function isCharCorrect(char) {
 }
 
 function handleAlpha(char) {
+  $("#wordsInput").val("");
+
   if (char === "\n" && Funbox.active === "58008") {
     char = " ";
   }
@@ -794,6 +799,5 @@ $("#wordsInput").on("input", function (event) {
   ) {
     char = char.charAt(0);
     handleAlpha(char);
-    event.target.value = "";
   }
 });

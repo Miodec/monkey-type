@@ -674,6 +674,7 @@ export function restart(withSameWordset = false, nosave = false, event) {
   $("#showWordHistoryButton").removeClass("loaded");
   TestUI.focusWords();
   Funbox.resetMemoryTimer();
+  $("#wordsInput").val("");
 
   TestUI.reset();
 
