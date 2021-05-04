@@ -422,6 +422,10 @@ export function isASCIILetter(c) {
   return c.length === 1 && /[a-z]/i.test(c);
 }
 
+export function testDiacritic(char) {
+  return /[\u02B0-\u02FF`´^¨~]/.test(char);
+}
+
 export function kogasa(cov) {
   return (
     100 * (1 - Math.tanh(cov + Math.pow(cov, 3) / 3 + Math.pow(cov, 5) / 5))

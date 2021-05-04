@@ -35,7 +35,7 @@ export function updatePosition() {
 
   let caret = $("#caret");
 
-  let inputLen = TestLogic.input.current.length;
+  let inputLen = TestLogic.input.currentWord.length;
   let currentLetterIndex = inputLen - 1;
   if (currentLetterIndex == -1) {
     currentLetterIndex = 0;

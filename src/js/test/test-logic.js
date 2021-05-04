@@ -34,7 +34,7 @@ export function setNotSignedInUid(uid) {
   notSignedInLastResult.uid = uid;
 }
 
-class Words {
+class WordList {
   constructor() {
     this.list = [];
     this.length = 0;
@@ -73,43 +73,32 @@ class Words {
   }
 }
 
-class Input {
+class InputWordList {
   constructor() {
-    this.current = "";
     this.history = [];
+    this.currentWord = "";
   }
 
   reset() {
-    this.current = "";
     this.history = [];
-  }
-
-  resetHistory() {
-    this.history = [];
-  }
-
-  setCurrent(val) {
-    this.current = val;
-    this.length = this.current.length;
-  }
-
-  appendCurrent(val) {
-    this.current += val;
-    this.length = this.current.length;
-  }
-
-  resetCurrent() {
-    this.current = "";
+    this.currentWord = "";
   }
 
   pushHistory() {
-    this.history.push(this.current);
-    this.historyLength = this.history.length;
-    this.resetCurrent();
+    this.history.push(this.currentWord);
+    this.currentWord = "";
   }
 
   popHistory() {
     return this.history.pop();
+  }
+
+  getLastChar() {
+    return this.currentWord[this.currentWord.length];
+  }
+
+  dropLastChar() {
+    this.currentWord = this.currentWord.slice(0, -1);
   }
 
   getHistory(i) {
@@ -117,50 +106,20 @@ class Input {
   }
 }
 
-class Corrected {
-  constructor() {
-    this.current = "";
-    this.history = [];
-  }
-  setCurrent(val) {
-    this.current = val;
+class InputWordListBound extends InputWordList {
+  get currentWord() {
+    return $("#wordsInput").val().normalize();
   }
 
-  appendCurrent(val) {
-    this.current += val;
-  }
-
-  resetCurrent() {
-    this.current = "";
-  }
-
-  resetHistory() {
-    this.history = [];
-  }
-
-  reset() {
-    this.resetCurrent();
-    this.resetHistory();
-  }
-
-  getHistory(i) {
-    return this.history[i];
-  }
-
-  popHistory() {
-    return this.history.pop();
-  }
-
-  pushHistory() {
-    this.history.push(this.current);
-    this.current = "";
+  set currentWord(val) {
+    $("#wordsInput").val(val.normalize());
   }
 }
 
 export let active = false;
-export let words = new Words();
-export let input = new Input();
-export let corrected = new Corrected();
+export let words = new WordList();
+export let input = new InputWordListBound();
+export let corrected = new InputWordList();
 export let currentWordIndex = 0;
 export let isRepeated = false;
 export let hasTab = false;
@@ -350,8 +309,7 @@ export async function init() {
   //   incorrect: 0,
   // };
 
-  input.resetHistory();
-  input.resetCurrent();
+  input.reset();
 
   let language = await Misc.getLanguage(Config.language);
   if (language && language.name !== Config.language) {
@@ -767,7 +725,7 @@ export function restart(withSameWordset = false, nosave = false, event) {
         Keymap.highlightKey(
           words
             .getCurrent()
-            .substring(input.current.length, input.current.length + 1)
+            .substring(input.currentWord.length, input.currentWord.length + 1)
             .toString()
             .toUpperCase()
         );
@@ -824,13 +782,13 @@ export function calculateWpmAndRaw() {
     }
     chars += input.getHistory(i).length;
   }
-  if (words.getCurrent() == input.current) {
-    correctWordChars += input.current.length;
+  if (words.getCurrent() == input.currentWord) {
+    correctWordChars += input.currentWord.length;
   }
   if (Funbox.active === "nospace") {
     spaces = 0;
   }
-  chars += input.current.length;
+  chars += input.currentWord.length;
   let testSeconds = TestStats.calculateTestSeconds(performance.now());
   let wpm = Math.round(((correctWordChars + spaces) * (60 / testSeconds)) / 5);
   let raw = Math.round(((chars + spaces) * (60 / testSeconds)) / 5);
@@ -930,7 +888,7 @@ export function addWord() {
 
 export function finish(difficultyFailed = false) {
   if (!active) return;
-  if (Config.mode == "zen" && input.current.length != 0) {
+  if (Config.mode == "zen" && input.currentWord.length != 0) {
     input.pushHistory();
     corrected.pushHistory();
   }

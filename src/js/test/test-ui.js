@@ -13,6 +13,7 @@ import * as Commandline from "./commandline";
 import * as OutOfFocus from "./out-of-focus";
 import * as ManualRestart from "./manual-restart-tracker";
 import * as PractiseMissed from "./practise-missed";
+import * as Misc from "./misc";
 
 export let currentWordElementIndex = 0;
 export let resultVisible = false;
@@ -148,8 +149,8 @@ export function showWords() {
         TestLogic.words
           .getCurrent()
           .substring(
-            TestLogic.input.current.length,
-            TestLogic.input.current.length + 1
+            TestLogic.input.currentWord.length,
+            TestLogic.input.currentWord.length + 1
           )
           .toString()
           .toUpperCase()
@@ -265,10 +266,8 @@ export function screenshot() {
   }, 3000);
 }
 
-export function updateWordElement(showError) {
-  // if (Config.mode == "zen") return;
-
-  let input = TestLogic.input.current;
+export function updateWordElement(showError = !Config.blindMode) {
+  let input = TestLogic.input.currentWord;
   let wordAtIndex;
   let currentWord;
   wordAtIndex = document.querySelector("#words .word.active");
@@ -278,109 +277,117 @@ export function updateWordElement(showError) {
   let newlineafter = false;
 
   if (Config.mode === "zen") {
-    for (let i = 0; i < TestLogic.input.current.length; i++) {
-      if (TestLogic.input.current[i] === "\t") {
+    for (let i = 0; i < TestLogic.input.currentWord.length; i++) {
+      if (TestLogic.input.currentWord[i] === "\t") {
         ret += `<letter class='tabChar correct'><i class="fas fa-long-arrow-alt-right"></i></letter>`;
-      } else if (TestLogic.input.current[i] === "\n") {
+      } else if (TestLogic.input.currentWord[i] === "\n") {
         newlineafter = true;
         ret += `<letter class='nlChar correct'><i class="fas fa-angle-down"></i></letter>`;
       } else {
+        ret += `<letter class="correct">${TestLogic.input.currentWord[i]}</letter>`;
+      }
+    }
+  } else if (Config.highlightMode == "word") {
+    //only for word highlight
+
+    let correctSoFar = false;
+    let lastInputDead = false;
+
+    if (Misc.testDiacritic(input[input.length - 1])) {
+      lastInputDead = true;
+      if (currentWord.slice(0, input.length - 1) === input.slice(0, -1)) {
+        correctSoFar = true;
+      }
+    } else {
+      if (currentWord.slice(0, input.length) === input) {
+        correctSoFar = true;
+      }
+    }
+
+    let classString = correctSoFar ? "correct" : "incorrect";
+    if (Config.blindMode) {
+      classString = "correct";
+    }
+
+    //show letters in the current word
+    for (let i = 0; i < currentWord.length; i++) {
+      if (lastInputDead && i == input.length - 1) {
         ret +=
-          `<letter class="correct">` + TestLogic.input.current[i] + `</letter>`;
+          `<letter class="${classString} dead">` + currentWord[i] + `</letter>`;
+      } else {
+        ret += `<letter class="${classString}">` + currentWord[i] + `</letter>`;
+      }
+    }
+
+    //show any extra letters if hide extra letters is disabled
+    if (
+      TestLogic.input.currentWord.length > currentWord.length &&
+      !Config.hideExtraLetters
+    ) {
+      for (
+        let i = currentWord.length;
+        i < TestLogic.input.currentWord.length;
+        i++
+      ) {
+        let letter = TestLogic.input.currentWord[i];
+        if (letter == " ") {
+          letter = "_";
+        }
+        ret += `<letter class="${classString}">${letter}</letter>`;
       }
     }
   } else {
-    if (Config.highlightMode == "word") {
-      //only for word highlight
-
-      let correctSoFar = false;
-      if (currentWord.slice(0, input.length) == input) {
-        // this is when input so far is correct
-        correctSoFar = true;
-      }
-      let classString = correctSoFar ? "correct" : "incorrect";
-      if (Config.blindMode) {
-        classString = "correct";
-      }
-
-      //show letters in the current word
-      for (let i = 0; i < currentWord.length; i++) {
-        ret += `<letter class="${classString}">` + currentWord[i] + `</letter>`;
+    for (let i = 0; i < input.length; i++) {
+      let charCorrect = currentWord[i] == input[i];
+      let currentLetter = currentWord[i];
+      let tabChar = "";
+      let nlChar = "";
+      if (currentLetter === "\t") {
+        tabChar = "tabChar";
+        currentLetter = `<i class="fas fa-long-arrow-alt-right"></i>`;
+      } else if (currentLetter === "\n") {
+        nlChar = "nlChar";
+        currentLetter = `<i class="fas fa-angle-down"></i>`;
       }
 
-      //show any extra letters if hide extra letters is disabled
-      if (
-        TestLogic.input.current.length > currentWord.length &&
-        !Config.hideExtraLetters
+      if (charCorrect) {
+        ret += `<letter class="correct ${tabChar}${nlChar}">${currentLetter}</letter>`;
+      } else if (
+        currentLetter !== undefined &&
+        i == input.length - 1 &&
+        Misc.testDiacritic(input[i])
       ) {
-        for (
-          let i = currentWord.length;
-          i < TestLogic.input.current.length;
-          i++
-        ) {
-          let letter = TestLogic.input.current[i];
-          if (letter == " ") {
+        // TODO: handle multiple consecutive diacritics as dead keys too, since they can be stacked
+        ret += `<letter class="dead">${currentLetter}</letter>`;
+      } else if (!showError) {
+        if (currentLetter !== undefined) {
+          ret += `<letter class="correct ${tabChar}${nlChar}">${currentLetter}</letter>`;
+        }
+      } else if (currentLetter === undefined) {
+        if (!Config.hideExtraLetters) {
+          let letter = input[i];
+          if (letter == " " || letter == "\t" || letter == "\n") {
             letter = "_";
           }
-          ret += `<letter class="${classString}">${letter}</letter>`;
+          ret += `<letter class="incorrect extra ${tabChar}${nlChar}">${letter}</letter>`;
         }
+      } else {
+        ret +=
+          `<letter class="incorrect ${tabChar}${nlChar}">` +
+          currentLetter +
+          (Config.indicateTypos ? `<hint>${input[i]}</hint>` : "") +
+          "</letter>";
       }
-    } else {
-      for (let i = 0; i < input.length; i++) {
-        let charCorrect;
-        if (currentWord[i] == input[i]) {
-          charCorrect = true;
+    }
+
+    if (input.length < currentWord.length) {
+      for (let i = input.length; i < currentWord.length; i++) {
+        if (currentWord[i] === "\t") {
+          ret += `<letter class='tabChar'><i class="fas fa-long-arrow-alt-right"></i></letter>`;
+        } else if (currentWord[i] === "\n") {
+          ret += `<letter class='nlChar'><i class="fas fa-angle-down"></i></letter>`;
         } else {
-          charCorrect = false;
-        }
-
-        let currentLetter = currentWord[i];
-        let tabChar = "";
-        let nlChar = "";
-        if (currentLetter === "\t") {
-          tabChar = "tabChar";
-          currentLetter = `<i class="fas fa-long-arrow-alt-right"></i>`;
-        } else if (currentLetter === "\n") {
-          nlChar = "nlChar";
-          currentLetter = `<i class="fas fa-angle-down"></i>`;
-        }
-
-        if (charCorrect) {
-          ret += `<letter class="correct ${tabChar}${nlChar}">${currentLetter}</letter>`;
-        } else {
-          if (!showError) {
-            if (currentLetter !== undefined) {
-              ret += `<letter class="correct ${tabChar}${nlChar}">${currentLetter}</letter>`;
-            }
-          } else {
-            if (currentLetter == undefined) {
-              if (!Config.hideExtraLetters) {
-                let letter = input[i];
-                if (letter == " " || letter == "\t" || letter == "\n") {
-                  letter = "_";
-                }
-                ret += `<letter class="incorrect extra ${tabChar}${nlChar}">${letter}</letter>`;
-              }
-            } else {
-              ret +=
-                `<letter class="incorrect ${tabChar}${nlChar}">` +
-                currentLetter +
-                (Config.indicateTypos ? `<hint>${input[i]}</hint>` : "") +
-                "</letter>";
-            }
-          }
-        }
-      }
-
-      if (input.length < currentWord.length) {
-        for (let i = input.length; i < currentWord.length; i++) {
-          if (currentWord[i] === "\t") {
-            ret += `<letter class='tabChar'><i class="fas fa-long-arrow-alt-right"></i></letter>`;
-          } else if (currentWord[i] === "\n") {
-            ret += `<letter class='nlChar'><i class="fas fa-angle-down"></i></letter>`;
-          } else {
-            ret += "<letter>" + currentWord[i] + "</letter>";
-          }
+          ret += "<letter>" + currentWord[i] + "</letter>";
         }
       }
     }
@@ -701,7 +708,7 @@ async function loadWordsHistory() {
                 "</letter>";
             }
           } else {
-            if (input[c] === TestLogic.input.current) {
+            if (input[c] === TestLogic.input.currentWord) {
               wordEl +=
                 `<letter class='correct ${extraCorrected}'>` +
                 word[c] +
@@ -843,7 +850,7 @@ $("#wordsInput").on("focus", () => {
   if (!resultVisible && Config.showOutOfFocusWarning) {
     OutOfFocus.hide();
   }
-  Caret.show(TestLogic.input.current);
+  Caret.show(TestLogic.input.currentWord);
 });
 
 $("#wordsInput").on("focusout", () => {

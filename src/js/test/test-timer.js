@@ -73,8 +73,8 @@ export function start() {
           TestLogic.words
             .getCurrent()
             .substring(
-              TestLogic.input.current.length,
-              TestLogic.input.current.length + 1
+              TestLogic.input.currentWord.length,
+              TestLogic.input.currentWord.length + 1
             )
             .toString()
             .toUpperCase()
