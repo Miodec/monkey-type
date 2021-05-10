@@ -630,13 +630,7 @@ $(document).keydown(function (event) {
     return;
   }
 
-  // TODO: caps lock backspace
-  //const isBackspace =
-  //  event.key === "Backspace" ||
-  //  (Config.capsLockBackspace && event.key === "CapsLock");
-  const isBackspace = event.key === "Backspace";
-
-  if (isBackspace && wordsFocused) {
+  if (event.key === "Backspace" && wordsFocused) {
     setupBackspace(event);
   }
 

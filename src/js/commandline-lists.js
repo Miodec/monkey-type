@@ -1752,13 +1752,6 @@ export let defaultCommands = {
       },
     },
     {
-      id: "toggleCapsLockBackspace",
-      display: "Toggle caps lock backspace",
-      exec: () => {
-        UpdateConfig.toggleCapsLockBackspace();
-      },
-    },
-    {
       id: "changeLayout",
       display: "Change layout...",
       subgroup: true,
