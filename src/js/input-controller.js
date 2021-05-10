@@ -130,7 +130,6 @@ function setupBackspace(event) {
   }
 
   TestLogic.words.decreaseCurrentIndex();
-  Replay.addReplayEvent("backWord");
   TestUI.setCurrentWordElementIndex(TestUI.currentWordElementIndex - 1);
   TestUI.updateActiveElement(true);
   Funbox.toggleScript(TestLogic.words.getCurrent());
@@ -420,11 +419,11 @@ function handleLastChar() {
   TestStats.incrementAccuracy(thisCharCorrect);
 
   if (!thisCharCorrect) {
-    Replay.addReplayEvent("incorrectLetter", event.key);
+    Replay.addReplayEvent("incorrectLetter", char);
     TestStats.incrementKeypressErrors();
     TestStats.pushMissedWord(TestLogic.words.getCurrent());
   } else {
-    Replay.addReplayEvent("correctLetter", event.key);
+    Replay.addReplayEvent("correctLetter", char);
   }
 
   if (thisCharCorrect) {
@@ -738,9 +737,16 @@ $("#wordsInput").on("beforeinput", function (event) {
 $("#wordsInput").on("input", function (event) {
   if (TestUI.testRestarting) return;
 
-  // TODO: trigger replay events correctly (clearWord, deleteLetter)
   if (TestLogic.input.currentWord.length >= inputWordBeforeChange.length) {
     handleLastChar();
+  } else if (inputWordBeforeChange.length > 0) {
+    for (
+      let i = 0;
+      i < inputWordBeforeChange.length - TestLogic.input.currentWord.length;
+      i++
+    ) {
+      Replay.addReplayEvent("deleteLetter");
+    }
   }
 
   TestUI.updateWordElement();
@@ -748,4 +754,6 @@ $("#wordsInput").on("input", function (event) {
 
   let acc = Misc.roundTo2(TestStats.calculateAccuracy());
   LiveAcc.update(acc);
+
+  inputWordBeforeChange = "";
 });

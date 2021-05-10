@@ -154,13 +154,21 @@ function handleDisplayLogic(item) {
     myElement.classList.add("incorrect");
     curPos++;
   } else if (item.action === "deleteLetter") {
-    let myElement = activeWord.children[curPos - 1];
-    if (myElement.classList.contains("extra")) {
-      myElement.remove();
+    if (curPos === 0) {
+      wordPos--;
+      activeWord = document.getElementById("replayWords").children[wordPos];
+      curPos = activeWord.children.length;
+      while (activeWord.children[curPos - 1].className === "") curPos--;
+      activeWord.classList.remove("error");
     } else {
-      myElement.className = "";
+      let myElement = activeWord.children[curPos - 1];
+      if (myElement.classList.contains("extra")) {
+        myElement.remove();
+      } else {
+        myElement.className = "";
+      }
+      curPos--;
     }
-    curPos--;
   } else if (item.action === "submitCorrectWord") {
     wordPos++;
     curPos = 0;
@@ -168,20 +176,6 @@ function handleDisplayLogic(item) {
     activeWord.classList.add("error");
     wordPos++;
     curPos = 0;
-  } else if (item.action === "clearWord") {
-    let promptWord = document.createElement("div");
-    let wordArr = wordsList[wordPos].split("");
-    wordArr.forEach((letter, i) => {
-      promptWord.innerHTML += `<letter>${letter}</letter>`;
-    });
-    activeWord.innerHTML = promptWord.innerHTML;
-    curPos = 0;
-  } else if (item.action === "backWord") {
-    wordPos--;
-    activeWord = document.getElementById("replayWords").children[wordPos];
-    curPos = activeWord.children.length;
-    while (activeWord.children[curPos - 1].className === "") curPos--;
-    activeWord.classList.remove("error");
   }
 }
 
