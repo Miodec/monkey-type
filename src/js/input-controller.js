@@ -25,7 +25,6 @@ import * as Replay from "./replay.js";
 let dontInsertSpace = false;
 let isCapsLockHeld = false;
 let inputWordBeforeChange = "";
-let $wordsInput = $("#wordsInput");
 
 function handleTab(event) {
   if (TestUI.resultCalculating) {
@@ -586,7 +585,7 @@ $(document).keydown(function (event) {
   //autofocus
   let pageTestActive = !$(".pageTest").hasClass("hidden");
   let commandLineVisible = !$("#commandLineWrapper").hasClass("hidden");
-  let wordsFocused = $wordsInput.is(":focus");
+  let wordsFocused = $("#wordsInput").is(":focus");
   let modePopupVisible =
     !$("#customTextPopupWrapper").hasClass("hidden") ||
     !$("#customWordAmountPopupWrapper").hasClass("hidden") ||
@@ -727,16 +726,16 @@ $(document).keydown(function (event) {
 });
 
 function triggerInputWith(string) {
-  $wordsInput.trigger("beforeinput");
+  $("#wordsInput").trigger("beforeinput");
   TestLogic.input.currentWord += string;
-  $wordsInput.trigger("input");
+  $("#wordsInput").trigger("input");
 }
 
-$wordsInput.on("beforeinput", function (event) {
+$("#wordsInput").on("beforeinput", function (event) {
   inputWordBeforeChange = event.target.value.normalize();
 });
 
-$wordsInput.on("input", function (event) {
+$("#wordsInput").on("input", function (event) {
   if (TestUI.testRestarting) return;
 
   // TODO: trigger replay events correctly (clearWord, deleteLetter)
