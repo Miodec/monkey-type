@@ -724,6 +724,15 @@ function triggerInputWith(string) {
   $("#wordsInput").trigger("input");
 }
 
+$("#wordsInput").on("keyup keydown", function (event) {
+  if (
+    this.selectionStart !== event.target.value.length ||
+    this.selectionEnd !== event.target.value.length
+  ) {
+    this.selectionStart = this.selectionEnd = event.target.value.length;
+  }
+});
+
 $("#wordsInput").on("beforeinput", function (event) {
   inputWordBeforeChange = event.target.value.normalize();
 });
