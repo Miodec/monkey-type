@@ -23,7 +23,6 @@ import * as ShiftTracker from "./shift-tracker";
 import * as Replay from "./replay.js";
 
 let dontInsertSpace = false;
-let isCapsLockHeld = false;
 let inputWordBeforeChange = "";
 
 function handleTab(event) {
@@ -557,30 +556,7 @@ function handleLastChar() {
   }
 }
 
-$(document).keyup((event) => {
-  if (!event.originalEvent.isTrusted) return;
-
-  if (TestUI.resultVisible) return;
-  let now = performance.now();
-  let diff = Math.abs(TestStats.keypressTimings.duration.current - now);
-  if (TestStats.keypressTimings.duration.current !== -1) {
-    TestStats.pushKeypressDuration(diff);
-  }
-  TestStats.setKeypressDuration(now);
-  Monkey.stop();
-});
-
 $(document).keydown(function (event) {
-  if (!event.originalEvent.isTrusted) return;
-
-  if (!TestUI.resultVisible) {
-    TestStats.recordKeypressSpacing();
-  }
-
-  isCapsLockHeld = event.originalEvent.getModifierState("CapsLock");
-
-  Monkey.type();
-
   //autofocus
   const pageTestActive = !$(".pageTest").hasClass("hidden");
   const commandLineVisible = !$("#commandLineWrapper").hasClass("hidden");
@@ -625,15 +601,21 @@ $(document).keydown(function (event) {
       event.preventDefault();
     }
   }
-
-  TestStats.setKeypressDuration(performance.now());
 });
 
 $("#wordsInput").keydown(function (event) {
+  if (!event.originalEvent.isTrusted) {
+    event.preventDefault();
+    return;
+  }
+
   if (TestUI.testRestarting) {
     return;
   }
 
+  Monkey.type();
+
+  TestStats.recordKeypressSpacing();
   TestStats.setKeypressDuration(performance.now());
 
   if (event.key === "Backspace") {
@@ -717,6 +699,22 @@ $("#wordsInput").keydown(function (event) {
       triggerInputWith(char);
     }
   }
+});
+
+$("#wordsInput").keyup((event) => {
+  if (!event.originalEvent.isTrusted) {
+    event.preventDefault();
+    return;
+  }
+
+  if (TestUI.resultVisible) return;
+  let now = performance.now();
+  let diff = Math.abs(TestStats.keypressTimings.duration.current - now);
+  if (TestStats.keypressTimings.duration.current !== -1) {
+    TestStats.pushKeypressDuration(diff);
+  }
+  TestStats.setKeypressDuration(now);
+  Monkey.stop();
 });
 
 function triggerInputWith(string) {
