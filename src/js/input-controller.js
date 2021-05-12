@@ -591,7 +591,7 @@ $(document).keydown(function (event) {
   }
 
   //blocking firefox from going back in history with backspace
-  if (event.key === "Backspace" && wordsFocused) {
+  if (event.key === "Backspace") {
     let t = /INPUT|SELECT|TEXTAREA/i;
     if (
       !t.test(event.target.tagName) ||
@@ -723,17 +723,16 @@ function triggerInputWith(string) {
   $("#wordsInput").trigger("input");
 }
 
-$("#wordsInput").on("keyup keydown", function (event) {
+$("#wordsInput").on("beforeinput", function (event) {
+  inputWordBeforeChange = event.target.value.normalize();
+
+  // force caret at end of input
   if (
     this.selectionStart !== event.target.value.length ||
     this.selectionEnd !== event.target.value.length
   ) {
     this.selectionStart = this.selectionEnd = event.target.value.length;
   }
-});
-
-$("#wordsInput").on("beforeinput", function (event) {
-  inputWordBeforeChange = event.target.value.normalize();
 });
 
 $("#wordsInput").on("input", function (event) {
@@ -756,6 +755,4 @@ $("#wordsInput").on("input", function (event) {
 
   let acc = Misc.roundTo2(TestStats.calculateAccuracy());
   LiveAcc.update(acc);
-
-  inputWordBeforeChange = "";
 });
