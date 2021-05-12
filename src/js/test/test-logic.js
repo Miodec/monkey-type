@@ -109,11 +109,11 @@ class InputWordList {
 
 class InputWordListBound extends InputWordList {
   get currentWord() {
-    return $("#wordsInput").val().normalize();
+    return $("#wordsInput").val().normalize().slice(1);
   }
 
   set currentWord(val) {
-    $("#wordsInput").val(val.normalize());
+    $("#wordsInput").val(" " + val.normalize());
   }
 }
 
@@ -1086,7 +1086,7 @@ export function finish(difficultyFailed = false) {
     );
   }, 125);
 
-  $("#testModesNotice").css("opacity",0);
+  $("#testModesNotice").css("opacity", 0);
   $("#result .stats .leaderboards .bottom").text("");
   $("#result .stats .leaderboards").addClass("hidden");
 
