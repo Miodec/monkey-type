@@ -720,15 +720,16 @@ function triggerInputWith(string) {
   $("#wordsInput").trigger("input");
 }
 
-$("#wordsInput").on("beforeinput", function (event) {
+$("#wordsInput").on("keyup beforeinput", function (event) {
   inputValueBeforeChange = event.target.value.normalize();
 
   // force caret at end of input
   if (
-    this.selectionStart !== event.target.value.length ||
-    this.selectionEnd !== event.target.value.length
+    event.target.selectionStart !== event.target.value.length ||
+    event.target.selectionEnd !== event.target.value.length
   ) {
-    this.selectionStart = this.selectionEnd = event.target.value.length;
+    event.target.selectionStart = event.target.selectionEnd =
+      event.target.value.length;
   }
 });
 
