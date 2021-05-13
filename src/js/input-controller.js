@@ -736,10 +736,12 @@ $("#wordsInput").on("keyup beforeinput", function (event) {
 $("#wordsInput").on("input", function (event) {
   if (TestUI.testRestarting) return;
 
-  if (event.target.value.length >= inputValueBeforeChange.length) {
+  let inputValue = event.target.value.normalize();
+
+  if (inputValue.length >= inputValueBeforeChange.length) {
     handleLastChar();
   } else {
-    if (event.target.value === "") {
+    if (inputValue === "") {
       // fallback for when no Backspace keydown event (mobile)
       event.target.value = " ";
       backspaceToPrevious();
@@ -747,7 +749,7 @@ $("#wordsInput").on("input", function (event) {
     } else {
       for (
         let i = 0;
-        i < inputValueBeforeChange.length - event.target.value.length;
+        i < inputValueBeforeChange.length - inputValue.length;
         i++
       ) {
         Replay.addReplayEvent("deleteLetter");
