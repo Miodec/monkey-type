@@ -12,9 +12,9 @@ export let rawHistory = [];
 export let keypressPerSecond = [];
 export let currentKeypress = {
   count: 0,
-  mod: 0,
   errors: 0,
   words: [],
+  afk: true,
 };
 
 export let lastKeypress;
@@ -50,9 +50,9 @@ export function restart() {
   keypressPerSecond = [];
   currentKeypress = {
     count: 0,
-    mod: 0,
     errors: 0,
     words: [],
+    afk: true,
   };
   // errorsPerSecond = [];
   // currentError = {
@@ -134,8 +134,8 @@ export function incrementKeypressCount() {
   currentKeypress.count++;
 }
 
-export function incrementKeypressMod() {
-  currentKeypress.mod++;
+export function setKeypressNotAfk() {
+  currentKeypress.afk = false;
 }
 
 export function incrementKeypressErrors() {
@@ -150,14 +150,14 @@ export function pushKeypressesToHistory() {
   keypressPerSecond.push(currentKeypress);
   currentKeypress = {
     count: 0,
-    mod: 0,
     errors: 0,
     words: [],
+    afk: true,
   };
 }
 
 export function calculateAfkSeconds() {
-  return keypressPerSecond.filter((x) => x.count == 0 && x.mod == 0).length;
+  return keypressPerSecond.filter((x) => x.afk).length;
 }
 
 export function setLastSecondNotRound() {
