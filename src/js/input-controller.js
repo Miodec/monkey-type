@@ -118,6 +118,8 @@ function backspaceToPrevious() {
     return;
   }
 
+  TestUI.updateWordElement();
+
   TestLogic.input.currentWord = TestLogic.input.popHistory();
   TestLogic.corrected.popHistory();
 
@@ -676,17 +678,8 @@ function triggerInputWith(string) {
   $("#wordsInput").trigger("input");
 }
 
-$("#wordsInput").on("keyup beforeinput", function (event) {
+$("#wordsInput").on("beforeinput", function (event) {
   inputValueBeforeChange = event.target.value.normalize();
-
-  // force caret at end of input
-  if (
-    event.target.selectionStart !== event.target.value.length ||
-    event.target.selectionEnd !== event.target.value.length
-  ) {
-    event.target.selectionStart = event.target.selectionEnd =
-      event.target.value.length;
-  }
 });
 
 $("#wordsInput").on("input", function (event) {
@@ -718,4 +711,13 @@ $("#wordsInput").on("input", function (event) {
 
   let acc = Misc.roundTo2(TestStats.calculateAccuracy());
   LiveAcc.update(acc);
+
+  // force caret at end of input
+  if (
+    event.target.selectionStart !== event.target.value.length ||
+    event.target.selectionEnd !== event.target.value.length
+  ) {
+    event.target.selectionStart = event.target.selectionEnd =
+      event.target.value.length;
+  }
 });
