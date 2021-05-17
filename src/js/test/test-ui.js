@@ -291,17 +291,16 @@ export function updateWordElement(showError = !Config.blindMode) {
     //only for word highlight
 
     let correctSoFar = false;
-    let lastInputDead = false;
 
-    if (Misc.testDiacritic(input[input.length - 1])) {
-      lastInputDead = true;
-      if (currentWord.slice(0, input.length - 1) === input.slice(0, -1)) {
-        correctSoFar = true;
-      }
-    } else {
-      if (currentWord.slice(0, input.length) === input) {
-        correctSoFar = true;
-      }
+    // slice earlier if input has trailing compose characters
+    const inputWithoutComposeLength = Misc.trailingComposeChars.test(input)
+      ? input.search(Misc.trailingComposeChars)
+      : input.length;
+    if (
+      currentWord.slice(0, inputWithoutComposeLength) ===
+      input.slice(0, inputWithoutComposeLength)
+    ) {
+      correctSoFar = true;
     }
 
     let classString = correctSoFar ? "correct" : "incorrect";
@@ -311,7 +310,7 @@ export function updateWordElement(showError = !Config.blindMode) {
 
     //show letters in the current word
     for (let i = 0; i < currentWord.length; i++) {
-      if (lastInputDead && i == input.length - 1) {
+      if (i === input.search(Misc.trailingComposeChars)) {
         ret +=
           `<letter class="${classString} dead">` + currentWord[i] + `</letter>`;
       } else {
@@ -320,20 +319,27 @@ export function updateWordElement(showError = !Config.blindMode) {
     }
 
     //show any extra letters if hide extra letters is disabled
-    if (
-      TestLogic.input.currentWord.length > currentWord.length &&
-      !Config.hideExtraLetters
-    ) {
-      for (
-        let i = currentWord.length;
-        i < TestLogic.input.currentWord.length;
-        i++
-      ) {
+    if (input.length > currentWord.length && !Config.hideExtraLetters) {
+      for (let i = currentWord.length; i < input.length; i++) {
         let letter = TestLogic.input.currentWord[i];
         if (letter == " ") {
           letter = "_";
         }
-        ret += `<letter class="${classString}">${letter}</letter>`;
+
+        if (
+          Misc.trailingComposeChars.test(input) &&
+          i > input.search(Misc.trailingComposeChars)
+        )
+          continue;
+
+        if (
+          Misc.trailingComposeChars.test(input) &&
+          i === input.search(Misc.trailingComposeChars)
+        ) {
+          ret += `<letter class="${classString} dead">${letter}</letter>`;
+        } else {
+          ret += `<letter class="${classString}">${letter}</letter>`;
+        }
       }
     }
   } else {
@@ -356,14 +362,19 @@ export function updateWordElement(showError = !Config.blindMode) {
         currentLetter = `<i class="fas fa-angle-down"></i>`;
       }
 
+      if (
+        Misc.trailingComposeChars.test(input) &&
+        i > input.search(Misc.trailingComposeChars)
+      )
+        continue;
+
       if (charCorrect) {
         ret += `<letter class="${correctClass} ${tabChar}${nlChar}">${currentLetter}</letter>`;
       } else if (
         currentLetter !== undefined &&
-        i == input.length - 1 &&
-        Misc.testDiacritic(input[i])
+        Misc.trailingComposeChars.test(input) &&
+        i === input.search(Misc.trailingComposeChars)
       ) {
-        // TODO: handle multiple consecutive diacritics as dead keys too, since they can be stacked
         ret += `<letter class="dead">${currentLetter}</letter>`;
       } else if (!showError) {
         if (currentLetter !== undefined) {
@@ -386,8 +397,11 @@ export function updateWordElement(showError = !Config.blindMode) {
       }
     }
 
-    if (input.length < currentWord.length) {
-      for (let i = input.length; i < currentWord.length; i++) {
+    const inputWithSingleComposeLength = Misc.trailingComposeChars.test(input)
+      ? input.search(Misc.trailingComposeChars) + 1
+      : input.length;
+    if (inputWithSingleComposeLength < currentWord.length) {
+      for (let i = inputWithSingleComposeLength; i < currentWord.length; i++) {
         if (currentWord[i] === "\t") {
           ret += `<letter class='tabChar'><i class="fas fa-long-arrow-alt-right"></i></letter>`;
         } else if (currentWord[i] === "\n") {
