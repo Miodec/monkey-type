@@ -287,8 +287,9 @@ export function updateWordElement(showError = !Config.blindMode) {
       ? input.search(Misc.trailingComposeChars)
       : input.length;
     if (
+      input.search(Misc.trailingComposeChars) < currentWord.length &&
       currentWord.slice(0, inputWithoutComposeLength) ===
-      input.slice(0, inputWithoutComposeLength)
+        input.slice(0, inputWithoutComposeLength)
     ) {
       correctSoFar = true;
     }
@@ -334,8 +335,9 @@ export function updateWordElement(showError = !Config.blindMode) {
         Misc.trailingComposeChars.test(input) &&
         i === input.search(Misc.trailingComposeChars)
       ) {
-        // TODO:
-        ret += `<letter class="dead">${currentLetter}</letter>`;
+        ret += `<letter class="${
+          Config.highlightMode == "word" ? wordHighlightClassString : ""
+        } dead">${currentLetter}</letter>`;
       } else if (!showError) {
         if (currentLetter !== undefined) {
           ret += `<letter class="${
