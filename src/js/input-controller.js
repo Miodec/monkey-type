@@ -690,7 +690,11 @@ $("#wordsInput").on("input", function (event) {
 
   let inputValue = event.target.value.normalize();
 
-  if (inputValue.length >= inputValueBeforeChange.length) {
+  // if characters inserted or replaced
+  if (
+    inputValue.length >= inputValueBeforeChange.length ||
+    inputValue !== inputValueBeforeChange.slice(0, inputValue.length)
+  ) {
     handleLastChar();
   } else {
     if (inputValue === "") {
@@ -699,6 +703,7 @@ $("#wordsInput").on("input", function (event) {
       backspaceToPrevious();
       Replay.addReplayEvent("backWord");
     } else {
+      // TODO: this is broken
       for (
         let i = 0;
         i < inputValueBeforeChange.length - inputValue.length;
