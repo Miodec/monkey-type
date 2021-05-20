@@ -522,6 +522,7 @@ function handleLastChar() {
   }
 
   let activeWordTopBeforeJump = TestUI.activeWordTop;
+  TestUI.updateWordElement();
   let newActiveTop = document.querySelector("#words .word.active").offsetTop;
   //stop the word jump by slicing off the last character, update word again
   if (
@@ -538,6 +539,7 @@ function handleLastChar() {
       if (!Config.showAllLines) TestUI.lineJump(currentTop);
     } else {
       TestLogic.input.dropLastChar();
+      TestUI.updateWordElement();
     }
   }
 
@@ -703,6 +705,7 @@ $("#wordsInput").on("input", function (event) {
       backspaceToPrevious();
       Replay.addReplayEvent("backWord");
     } else {
+      TestUI.updateWordElement();
       // TODO: this is broken
       for (
         let i = 0;
@@ -714,7 +717,6 @@ $("#wordsInput").on("input", function (event) {
     }
   }
 
-  TestUI.updateWordElement();
   Caret.updatePosition();
 
   let acc = Misc.roundTo2(TestStats.calculateAccuracy());
