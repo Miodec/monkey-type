@@ -80,20 +80,23 @@ function handleDisplayLogic(item) {
       //if letter is an extra
       myElement = document.createElement("letter");
       myElement.classList.add("extra");
-      myElement.innerHTML = item.letter;
+      myElement.innerHTML = item.value;
       activeWord.appendChild(myElement);
     }
     myElement = activeWord.children[curPos];
     myElement.classList.add("incorrect");
     curPos++;
-  } else if (item.action === "deleteLetter") {
-    let myElement = activeWord.children[curPos - 1];
-    if (myElement.classList.contains("extra")) {
-      myElement.remove();
-    } else {
-      myElement.className = "";
+  } else if (item.action === "setWordLetterIndex") {
+    curPos = item.value;
+    // remove all letters from cursor to end of word
+    for (let i = curPos; i < activeWord.children.length; i++) {
+      let myElement = activeWord.children[i];
+      if (myElement.classList.contains("extra")) {
+        myElement.remove();
+      } else {
+        myElement.className = "";
+      }
     }
-    curPos--;
   } else if (item.action === "submitCorrectWord") {
     wordPos++;
     curPos = 0;
@@ -176,16 +179,13 @@ function stopReplayRecording() {
   replayRecording = false;
 }
 
-function addReplayEvent(action, letter = undefined) {
-  if (replayRecording === false) {
+function addReplayEvent(action, value) {
+  if (!replayRecording) {
     return;
   }
+
   let timeDelta = performance.now() - replayStartTime;
-  if (action === "incorrectLetter" || action === "correctLetter") {
-    replayData.push({ action: action, letter: letter, time: timeDelta });
-  } else {
-    replayData.push({ action: action, time: timeDelta });
-  }
+  replayData.push({ action: action, value: value, time: timeDelta });
 }
 
 function playReplay() {

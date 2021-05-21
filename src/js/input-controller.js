@@ -708,14 +708,10 @@ $("#wordsInput").on("input", function (event) {
       Replay.addReplayEvent("backWord");
     } else {
       TestUI.updateWordElement();
-      // TODO: this is broken
-      for (
-        let i = 0;
-        i < inputValueBeforeChange.length - inputValue.length;
-        i++
-      ) {
-        Replay.addReplayEvent("deleteLetter");
-      }
+      Replay.addReplayEvent(
+        "setWordLetterIndex",
+        TestLogic.input.currentWord.length
+      );
     }
   }
 
