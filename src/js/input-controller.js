@@ -611,6 +611,7 @@ $("#wordsInput").keydown(function (event) {
   }
 
   if (TestUI.testRestarting) {
+    event.preventDefault();
     return;
   }
 
