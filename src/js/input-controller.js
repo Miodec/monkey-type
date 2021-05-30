@@ -559,9 +559,9 @@ function handleLastChar() {
 
 $(document).keydown(function (event) {
   //autofocus
+  let wordsFocused = $("#wordsInput").is(":focus");
   const pageTestActive = !$(".pageTest").hasClass("hidden");
   const commandLineVisible = !$("#commandLineWrapper").hasClass("hidden");
-  const wordsFocused = $("#wordsInput").is(":focus");
   const modePopupVisible =
     !$("#customTextPopupWrapper").hasClass("hidden") ||
     !$("#customWordAmountPopupWrapper").hasClass("hidden") ||
@@ -579,7 +579,8 @@ $(document).keydown(function (event) {
     TestUI.focusWords();
     if (Config.showOutOfFocusWarning) {
       event.preventDefault();
-      event.stopImmediatePropagation();
+    } else {
+      wordsFocused = true;
     }
   }
 
@@ -602,15 +603,10 @@ $(document).keydown(function (event) {
       event.preventDefault();
     }
   }
-});
 
-$("#wordsInput").keydown(function (event) {
-  if (!event.originalEvent.isTrusted) {
-    event.preventDefault();
-    return;
-  }
+  if (!wordsFocused) return;
 
-  if (TestUI.testRestarting) {
+  if (!event.originalEvent.isTrusted || TestUI.testRestarting) {
     event.preventDefault();
     return;
   }
@@ -691,8 +687,6 @@ $("#wordsInput").on("beforeinput", function (event) {
 });
 
 $("#wordsInput").on("input", function (event) {
-  if (TestUI.testRestarting) return;
-
   let inputValue = event.target.value.normalize();
 
   // if characters inserted or replaced
