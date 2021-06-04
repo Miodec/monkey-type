@@ -727,3 +727,8 @@ $("#wordsInput").on("input", function (event) {
       event.target.value.length;
   }
 });
+
+$("#wordsInput").focus(function (event) {
+  event.target.selectionStart = event.target.selectionEnd =
+    event.target.value.length;
+});
