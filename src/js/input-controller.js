@@ -412,7 +412,10 @@ function handleLastChar() {
 
   let thisCharCorrect = isCharCorrect(char);
 
-  if (!thisCharCorrect && Misc.trailingComposeChars.test(char)) return;
+  if (!thisCharCorrect && Misc.trailingComposeChars.test(char)) {
+    TestUI.updateWordElement();
+    return;
+  }
 
   MonkeyPower.addPower(thisCharCorrect);
   TestStats.incrementAccuracy(thisCharCorrect);
