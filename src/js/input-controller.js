@@ -453,8 +453,13 @@ function handleLastChar() {
     TestStats.incrementKeypressErrors();
     TestStats.pushMissedWord(TestLogic.words.getCurrent());
   }
+
   WeakSpot.updateScore(
-    TestLogic.words.getCurrent().charAt(TestLogic.input.currentWord.length - 1),
+    Config.mode === "zen"
+      ? char
+      : TestLogic.words
+          .getCurrent()
+          .charAt(TestLogic.input.currentWord.length - 1),
     thisCharCorrect
   );
 
