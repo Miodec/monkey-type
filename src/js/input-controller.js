@@ -154,7 +154,7 @@ function handleSpace() {
 
   const inputWord = TestLogic.input.currentWord.slice(0, -1);
 
-  // handleLastChar() will decide if it gets inserted as character on start of word or not
+  // handleChar() will decide if it gets inserted as character on start of word or not
   if (inputWord === "") return;
 
   if (Config.mode == "zen") {
@@ -396,14 +396,11 @@ function isCharCorrect(char) {
   return false;
 }
 
-function handleLastChar() {
+function handleChar(char) {
   if (TestUI.resultCalculating || TestUI.resultVisible) {
     TestLogic.input.dropLastChar();
     return;
   }
-
-  let char =
-    TestLogic.input.currentWord[TestLogic.input.currentWord.length - 1];
 
   if (char === "\n" && Config.funbox === "58008") {
     char = " ";
@@ -735,13 +732,7 @@ $("#wordsInput").on("beforeinput", function (event) {
 $("#wordsInput").on("input", function (event) {
   let inputValue = event.target.value.normalize();
 
-  // if characters inserted or replaced
-  if (
-    inputValue.length >= inputValueBeforeChange.length ||
-    inputValue !== inputValueBeforeChange.slice(0, inputValue.length)
-  ) {
-    handleLastChar();
-  } else {
+  if (inputValue.length < inputValueBeforeChange.length) {
     if (inputValue === "") {
       // fallback for when no Backspace keydown event (mobile)
       event.target.value = " ";
@@ -753,6 +744,14 @@ $("#wordsInput").on("input", function (event) {
         "setWordLetterIndex",
         TestLogic.input.currentWord.length
       );
+    }
+  } else if (inputValue !== inputValueBeforeChange) {
+    let diffStart = 0;
+    while (inputValue[diffStart] === inputValueBeforeChange[diffStart])
+      diffStart++;
+
+    for (let i = diffStart; i < inputValue.length; i++) {
+      handleChar(inputValue[i]);
     }
   }
 
