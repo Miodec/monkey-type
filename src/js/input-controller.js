@@ -199,6 +199,8 @@ function handleSpace() {
   TestStats.incrementAccuracy(isWordCorrect);
   if (isWordCorrect) {
     PaceCaret.handleSpace(true, currentWord);
+    TestLogic.input.currentWord = inputWord;
+    TestLogic.input.pushHistory();
     TestLogic.words.increaseCurrentIndex();
     TestUI.setCurrentWordElementIndex(TestUI.currentWordElementIndex + 1);
     TestUI.updateActiveElement();
@@ -245,6 +247,8 @@ function handleSpace() {
     }
     PaceCaret.handleSpace(false, currentWord);
     if (Config.blindMode) $("#words .word.active letter").addClass("correct");
+    TestLogic.input.currentWord = inputWord;
+    TestLogic.input.pushHistory();
     TestUI.highlightBadWord(TestUI.currentWordElementIndex, !Config.blindMode);
     TestLogic.words.increaseCurrentIndex();
     TestUI.setCurrentWordElementIndex(TestUI.currentWordElementIndex + 1);
@@ -280,8 +284,6 @@ function handleSpace() {
     return;
   }
 
-  TestLogic.input.currentWord = inputWord;
-  TestLogic.input.pushHistory();
   TestLogic.corrected.pushHistory();
 
   if (
