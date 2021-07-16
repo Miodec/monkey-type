@@ -154,7 +154,7 @@ function handleSpace() {
 
   const inputWord = TestLogic.input.currentWord.slice(0, -1);
 
-  // handleChar() will decide if it gets inserted as character on start of word or not
+  // handleCharAt() will decide if it gets inserted as character on start of word or not
   if (inputWord === "") return;
 
   if (Config.mode == "zen") {
@@ -339,7 +339,7 @@ function handleSpace() {
   }
 }
 
-function isCharCorrect(char) {
+function isCharCorrect(char, originalChar) {
   if (
     Config.oppositeShiftMode === "on" &&
     ShiftTracker.isUsingOppositeShift(char) === false
@@ -350,10 +350,6 @@ function isCharCorrect(char) {
   if (Config.mode == "zen") {
     return true;
   }
-
-  const originalChar = TestLogic.words
-    .getCurrent()
-    .charAt(TestLogic.input.currentWord.length - 1);
 
   if (originalChar == char) {
     return true;
@@ -391,11 +387,13 @@ function isCharCorrect(char) {
   return false;
 }
 
-function handleChar(char) {
+function handleCharAt(charIndex) {
   if (TestUI.resultCalculating || TestUI.resultVisible) {
     TestLogic.input.dropLastChar();
     return;
   }
+
+  let char = TestLogic.input.currentWord[charIndex];
 
   if (char === "\n" && Config.funbox === "58008") {
     char = " ";
@@ -424,14 +422,17 @@ function handleChar(char) {
     return;
   }
 
-  if (TestLogic.input.current == "") {
+  if (TestLogic.input.currentWord == "") {
     TestStats.setBurstStart(performance.now());
   }
 
   Focus.set(true);
   Caret.stopAnimation();
 
-  let thisCharCorrect = isCharCorrect(char);
+  let thisCharCorrect = isCharCorrect(
+    char,
+    TestLogic.words.getCurrent()[charIndex]
+  );
 
   if (!thisCharCorrect && Misc.trailingComposeChars.test(char)) {
     TestUI.updateWordElement();
@@ -741,12 +742,13 @@ $("#wordsInput").on("input", function (event) {
       );
     }
   } else if (inputValue !== inputValueBeforeChange) {
-    let diffStart = 0;
+    let diffStart = 1;
     while (inputValue[diffStart] === inputValueBeforeChange[diffStart])
       diffStart++;
 
     for (let i = diffStart; i < inputValue.length; i++) {
-      handleChar(inputValue[i]);
+      // minus 1 for the padding space at the start
+      handleCharAt(i - 1);
     }
   }
 
