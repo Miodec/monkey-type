@@ -557,7 +557,8 @@ function handleCharAt(charIndex) {
     }
   }
 
-  let activeWordTopBeforeJump = TestUI.activeWordTop;
+  let activeWordTopBeforeJump = document.querySelector("#words .word.active")
+    .offsetTop;
   TestUI.updateWordElement();
   let newActiveTop = document.querySelector("#words .word.active").offsetTop;
   //stop the word jump by slicing off the last character, update word again
