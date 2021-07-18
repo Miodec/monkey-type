@@ -341,7 +341,9 @@ function handleSpace() {
   }
 }
 
-function isCharCorrect(char, originalChar) {
+function isCharCorrectAt(charIndex) {
+  const char = TestLogic.input.currentWord[charIndex];
+
   if (
     Config.oppositeShiftMode === "on" &&
     ShiftTracker.isUsingOppositeShift(char) === false
@@ -352,6 +354,8 @@ function isCharCorrect(char, originalChar) {
   if (Config.mode == "zen") {
     return true;
   }
+
+  const originalChar = TestLogic.words.getCurrent()[charIndex];
 
   if (originalChar == char) {
     return true;
@@ -431,10 +435,7 @@ function handleCharAt(charIndex) {
   Focus.set(true);
   Caret.stopAnimation();
 
-  let thisCharCorrect = isCharCorrect(
-    char,
-    TestLogic.words.getCurrent()[charIndex]
-  );
+  let thisCharCorrect = isCharCorrectAt(charIndex);
 
   if (!thisCharCorrect && Misc.trailingComposeChars.test(char)) {
     TestUI.updateWordElement();
