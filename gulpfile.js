@@ -165,6 +165,7 @@ const refactoredSrc = [
   "./src/js/test/test-timer.js",
   "./src/js/test/test-config.js",
   "./src/js/test/layout-emulator.js",
+  "./src/js/test/poetry.js",
   "./src/js/replay.js",
 ];
 
@@ -189,7 +190,7 @@ task("sass", function () {
 });
 
 task("static", function () {
-  return src("./static/**/*").pipe(dest("./dist/"));
+  return src("./static/**/*", { dot: true }).pipe(dest("./dist/"));
 });
 
 //copies refactored js files to dist/gen so that they can be required by dist/gen/index.js

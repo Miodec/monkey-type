@@ -29,6 +29,17 @@ import * as CloudFunctions from "./cloud-functions";
 import * as TestLeaderboards from "./test-leaderboards";
 import * as Replay from "./replay.js";
 import * as MonkeyPower from "./monkey-power";
+import * as Poetry from "./poetry.js";
+
+let glarsesMode = false;
+
+export function toggleGlarses() {
+  glarsesMode = true;
+  console.log(
+    "Glarses Mode On - test result will be hidden. You can check the stats in the console (here)"
+  );
+  console.log("To disable Glarses Mode refresh the page.");
+}
 
 export let notSignedInLastResult = null;
 
@@ -396,79 +407,90 @@ export async function init() {
     if (Config.funbox === "plus_one") {
       wordsBound = 2;
     }
+    if (Config.funbox === "plus_two") {
+      wordsBound = 3;
+    }
     let wordset = language.words;
     if (Config.mode == "custom") {
       wordset = CustomText.text;
     }
-    for (let i = 0; i < wordsBound; i++) {
-      let randomWord = wordset[Math.floor(Math.random() * wordset.length)];
-      const previousWord = words.get(i - 1);
-      const previousWord2 = words.get(i - 2);
-      if (
-        Config.mode == "custom" &&
-        (CustomText.isWordRandom || CustomText.isTimeRandom)
-      ) {
-        randomWord = wordset[Math.floor(Math.random() * wordset.length)];
-      } else if (Config.mode == "custom" && !CustomText.isWordRandom) {
-        randomWord = CustomText.text[i];
-      } else {
-        while (
-          randomWord == previousWord ||
-          randomWord == previousWord2 ||
-          (!Config.punctuation && randomWord == "I") ||
-          randomWord.indexOf(" ") > -1
+
+    if (Config.funbox == "poetry") {
+      let poem = await Poetry.getPoem();
+      poem.words.forEach((word) => {
+        words.push(word);
+      });
+    } else {
+      for (let i = 0; i < wordsBound; i++) {
+        let randomWord = wordset[Math.floor(Math.random() * wordset.length)];
+        const previousWord = words.get(i - 1);
+        const previousWord2 = words.get(i - 2);
+        if (
+          Config.mode == "custom" &&
+          (CustomText.isWordRandom || CustomText.isTimeRandom)
         ) {
           randomWord = wordset[Math.floor(Math.random() * wordset.length)];
-        }
-      }
-
-      if (Config.funbox === "rAnDoMcAsE") {
-        let randomcaseword = "";
-        for (let i = 0; i < randomWord.length; i++) {
-          if (i % 2 != 0) {
-            randomcaseword += randomWord[i].toUpperCase();
-          } else {
-            randomcaseword += randomWord[i];
+        } else if (Config.mode == "custom" && !CustomText.isWordRandom) {
+          randomWord = CustomText.text[i];
+        } else {
+          while (
+            randomWord == previousWord ||
+            randomWord == previousWord2 ||
+            (!Config.punctuation && randomWord == "I") ||
+            randomWord.indexOf(" ") > -1
+          ) {
+            randomWord = wordset[Math.floor(Math.random() * wordset.length)];
           }
         }
-        randomWord = randomcaseword;
-      } else if (Config.funbox === "gibberish") {
-        randomWord = Misc.getGibberish();
-      } else if (Config.funbox === "58008") {
-        // UpdateConfig.setPunctuation(false, true);
-        UpdateConfig.setNumbers(false, true);
-        randomWord = Misc.getNumbers(7);
-      } else if (Config.funbox === "specials") {
-        UpdateConfig.setPunctuation(false, true);
-        UpdateConfig.setNumbers(false, true);
-        randomWord = Misc.getSpecials();
-      } else if (Config.funbox === "ascii") {
-        UpdateConfig.setPunctuation(false, true);
-        UpdateConfig.setNumbers(false, true);
-        randomWord = Misc.getASCII();
-      }
 
-      if (Config.punctuation) {
-        randomWord = punctuateWord(previousWord, randomWord, i, wordsBound);
-      }
-      if (Config.numbers) {
-        if (
-          Math.random() < 0.1 &&
-          i !== 0 &&
-          Misc.getLastChar(previousWord) !== "."
-        ) {
-          randomWord = Misc.getNumbers(4);
-          if (i == wordsBound - 1) {
-            randomWord += ".";
+        if (Config.funbox === "rAnDoMcAsE") {
+          let randomcaseword = "";
+          for (let i = 0; i < randomWord.length; i++) {
+            if (i % 2 != 0) {
+              randomcaseword += randomWord[i].toUpperCase();
+            } else {
+              randomcaseword += randomWord[i];
+            }
+          }
+          randomWord = randomcaseword;
+        } else if (Config.funbox === "gibberish") {
+          randomWord = Misc.getGibberish();
+        } else if (Config.funbox === "58008") {
+          // UpdateConfig.setPunctuation(false, true);
+          UpdateConfig.setNumbers(false, true);
+          randomWord = Misc.getNumbers(7);
+        } else if (Config.funbox === "specials") {
+          UpdateConfig.setPunctuation(false, true);
+          UpdateConfig.setNumbers(false, true);
+          randomWord = Misc.getSpecials();
+        } else if (Config.funbox === "ascii") {
+          UpdateConfig.setPunctuation(false, true);
+          UpdateConfig.setNumbers(false, true);
+          randomWord = Misc.getASCII();
+        }
+
+        if (Config.punctuation) {
+          randomWord = punctuateWord(previousWord, randomWord, i, wordsBound);
+        }
+        if (Config.numbers) {
+          if (
+            Math.random() < 0.1 &&
+            i !== 0 &&
+            Misc.getLastChar(previousWord) !== "."
+          ) {
+            randomWord = Misc.getNumbers(4);
+            if (i == wordsBound - 1) {
+              randomWord += ".";
+            }
           }
         }
-      }
 
-      if (/\t/g.test(randomWord)) {
-        setHasTab(true);
-      }
+        if (/\t/g.test(randomWord)) {
+          setHasTab(true);
+        }
 
-      words.push(randomWord);
+        words.push(randomWord);
+      }
     }
   } else if (Config.mode == "quote") {
     // setLanguage(Config.language.replace(/_\d*k$/g, ""), true);
@@ -852,6 +874,7 @@ export function calculateWpmAndRaw() {
 export function addWord() {
   let bound = 100;
   if (Config.funbox === "plus_one") bound = 1;
+  if (Config.funbox === "plus_two") bound = 2;
   if (
     words.length - input.history.length > bound ||
     (Config.mode === "words" &&
@@ -958,7 +981,6 @@ export function finish(difficultyFailed = false) {
   PbCrown.hide();
   LiveAcc.hide();
   TimerProgress.hide();
-  Keymap.hide();
   Funbox.activate("none", null);
 
   if (
@@ -995,6 +1017,19 @@ export function finish(difficultyFailed = false) {
   lastTestWpm = stats.wpm;
 
   let testtime = stats.time;
+
+  if (TestStats.lastSecondNotRound) {
+    let wpmAndRaw = calculateWpmAndRaw();
+    TestStats.pushToWpmHistory(wpmAndRaw.wpm);
+    TestStats.pushToRawHistory(wpmAndRaw.raw);
+    TestStats.pushKeypressesToHistory();
+    // errorsPerSecond.push(currentError);
+    // currentError = {
+    //   count: 0,
+    //   words: [],
+    // };
+  }
+
   let afkseconds = TestStats.calculateAfkSeconds(testtime);
   let afkSecondsPercent = Misc.roundTo2((afkseconds / testtime) * 100);
 
@@ -1125,18 +1160,6 @@ export function finish(difficultyFailed = false) {
     mode2 = randomQuote.id;
   } else if (Config.mode === "zen") {
     mode2 = "zen";
-  }
-
-  if (TestStats.lastSecondNotRound) {
-    let wpmAndRaw = calculateWpmAndRaw();
-    TestStats.pushToWpmHistory(wpmAndRaw.wpm);
-    TestStats.pushToRawHistory(wpmAndRaw.raw);
-    TestStats.pushKeypressesToHistory();
-    // errorsPerSecond.push(currentError);
-    // currentError = {
-    //   count: 0,
-    //   words: [],
-    // };
   }
 
   let labels = [];
@@ -1802,21 +1825,53 @@ export function finish(difficultyFailed = false) {
 
   ChartController.result.update({ duration: 0 });
   ChartController.result.resize();
-  UI.swapElements($("#typingTest"), $("#result"), 250, () => {
-    TestUI.setResultCalculating(false);
-    $("#words").empty();
-    ChartController.result.resize();
-    if (Config.alwaysShowWordsHistory) {
-      TestUI.toggleResultWords();
+
+  if (glarsesMode) {
+    $("#middle #result .glarsesmessage").remove();
+    $("#middle #result").prepend(`
+
+      <div class='glarsesmessage' style="
+        text-align: center;
+        grid-column: 1/3;
+        font-size: 2rem;
+        padding: 2rem 0;
+      ">Test completed</div>
+    
+    `);
+    $("#middle #result .stats").remove();
+    $("#middle #result .chart").remove();
+    $("#middle #result #resultWordsHistory").remove();
+    $("#middle #result #resultReplay").remove();
+    $("#middle #result .loginTip").remove();
+
+    console.log(
+      `Test Completed: ${stats.wpm} wpm ${stats.acc}% acc ${stats.wpmRaw} raw ${consistency}% consistency`
+    );
+  }
+
+  UI.swapElements(
+    $("#typingTest"),
+    $("#result"),
+    250,
+    () => {
+      TestUI.setResultCalculating(false);
+      $("#words").empty();
+      ChartController.result.resize();
+      if (Config.alwaysShowWordsHistory) {
+        TestUI.toggleResultWords();
+      }
+      $("#testModesNotice").addClass("hidden");
+    },
+    () => {
+      Keymap.hide();
     }
-    $("#testModesNotice").addClass("hidden");
-  });
+  );
 }
 
 export function fail() {
   input.pushHistory();
   corrected.pushHistory();
-  TestStats.pushKeypressesToHistory();
+  // TestStats.pushKeypressesToHistory();
   finish(true);
   let testSeconds = TestStats.calculateTestSeconds(performance.now());
   let afkseconds = TestStats.calculateAfkSeconds(testSeconds);
