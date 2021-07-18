@@ -1212,13 +1212,14 @@ export function finish(difficultyFailed = false) {
   if (afkSecondsPercent > 0) {
     $("#result .stats .time .bottom .afk").text(afkSecondsPercent + "% afk");
   }
-  TodayTracker.addSeconds(
-    testtime +
-      (TestStats.incompleteSeconds < 0
+  let ttseconds = testtime - afkseconds;
+  if (!difficultyFailed) {
+    ttseconds +=
+      TestStats.incompleteSeconds < 0
         ? 0
-        : Misc.roundTo2(TestStats.incompleteSeconds)) -
-      afkseconds
-  );
+        : Misc.roundTo2(TestStats.incompleteSeconds);
+  }
+  TodayTracker.addSeconds(ttseconds);
   $("#result .stats .time .bottom .timeToday").text(TodayTracker.getString());
   $("#result .stats .key .bottom").text(testtime + "s");
   $("#words").removeClass("blurred");
@@ -1969,7 +1970,7 @@ export function finish(difficultyFailed = false) {
       $("#words").empty();
       ChartController.result.resize();
 
-      if (TestUI.heatmapEnabled) {
+      if (Config.burstHeatmap) {
         TestUI.applyBurstHeatmap();
       }
       $("#testModesNotice").addClass("hidden");
