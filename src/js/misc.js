@@ -371,6 +371,17 @@ export function mean(array) {
   }
 }
 
+//https://www.w3resource.com/javascript-exercises/fundamental/javascript-fundamental-exercise-88.php
+export function median(arr) {
+  try {
+    const mid = Math.floor(arr.length / 2),
+      nums = [...arr].sort((a, b) => a - b);
+    return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+  } catch (e) {
+    return 0;
+  }
+}
+
 export function getReleasesFromGitHub() {
   $.getJSON(
     "https://api.github.com/repos/Miodec/monkeytype/releases",
@@ -426,6 +437,13 @@ export function isASCIILetter(c) {
 export function kogasa(cov) {
   return (
     100 * (1 - Math.tanh(cov + Math.pow(cov, 3) / 3 + Math.pow(cov, 5) / 5))
+  );
+}
+
+export function whorf(speed, wordlen) {
+  return Math.min(
+    speed,
+    Math.floor(speed * Math.pow(1.03, -2 * (wordlen - 3)))
   );
 }
 
@@ -488,7 +506,7 @@ export function getGibberish() {
   return ret;
 }
 
-export function secondsToString(sec) {
+export function secondsToString(sec, full = false) {
   const hours = Math.floor(sec / 3600);
   const minutes = Math.floor((sec % 3600) / 60);
   const seconds = roundTo2((sec % 3600) % 60);
@@ -497,13 +515,13 @@ export function secondsToString(sec) {
   let secondsString;
   hours < 10 ? (hoursString = "0" + hours) : (hoursString = hours);
   minutes < 10 ? (minutesString = "0" + minutes) : (minutesString = minutes);
-  seconds < 10 && (minutes > 0 || hours > 0)
+  seconds < 10 && (minutes > 0 || hours > 0 || full)
     ? (secondsString = "0" + seconds)
     : (secondsString = seconds);
 
   let ret = "";
-  if (hours > 0) ret += hoursString + ":";
-  if (minutes > 0 || hours > 0) ret += minutesString + ":";
+  if (hours > 0 || full) ret += hoursString + ":";
+  if (minutes > 0 || hours > 0 || full) ret += minutesString + ":";
   ret += secondsString;
   return ret;
 }
@@ -738,5 +756,16 @@ function countAllKeys(obj) {
   keys.forEach((key) => (sum += countAllKeys(obj[key])));
   return sum;
 }
+
+//https://stackoverflow.com/questions/273789/is-there-a-version-of-javascripts-string-indexof-that-allows-for-regular-expr
+export function regexIndexOf(string, regex, startpos) {
+  var indexOf = string.substring(startpos || 0).search(regex);
+  return indexOf >= 0 ? indexOf + (startpos || 0) : indexOf;
+}
+
+String.prototype.lastIndexOfRegex = function (regex) {
+  var match = this.match(regex);
+  return match ? this.lastIndexOf(match[match.length - 1]) : -1;
+};
 
 export const trailingComposeChars = /[\u02B0-\u02FF`´^¨~]+$|⎄.*$/;

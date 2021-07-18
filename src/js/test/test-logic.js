@@ -15,6 +15,7 @@ import * as PaceCaret from "./pace-caret";
 import * as Caret from "./caret";
 import * as LiveWpm from "./live-wpm";
 import * as LiveAcc from "./live-acc";
+import * as LiveBurst from "./live-burst";
 import * as TimerProgress from "./timer-progress";
 import * as ChartController from "./chart-controller";
 import * as UI from "./ui";
@@ -30,6 +31,8 @@ import * as TestLeaderboards from "./test-leaderboards";
 import * as Replay from "./replay.js";
 import * as MonkeyPower from "./monkey-power";
 import * as Poetry from "./poetry.js";
+import * as TodayTracker from "./today-tracker";
+import * as WeakSpot from "./weak-spot";
 
 let glarsesMode = false;
 
@@ -97,6 +100,10 @@ class InputWordList {
     this.currentWord = "";
   }
 
+  getCurrent() {
+    return this.current;
+  }
+
   pushHistory() {
     this.history.push(this.currentWord);
     this.currentWord = "";
@@ -115,7 +122,11 @@ class InputWordList {
   }
 
   getHistory(i) {
-    return this.history[i];
+    if (i === undefined) {
+      return this.history;
+    } else {
+      return this.history[i];
+    }
   }
 }
 
@@ -166,8 +177,11 @@ export function setRandomQuote(rq) {
   randomQuote = rq;
 }
 
+let spanishSentenceTracker = "";
 export function punctuateWord(previousWord, currentWord, index, maxindex) {
   let word = currentWord;
+
+  let currentLanguage = Config.language.split("_")[0];
 
   if (Config.funbox === "58008") {
     if (currentWord.length > 3) {
@@ -182,10 +196,22 @@ export function punctuateWord(previousWord, currentWord, index, maxindex) {
         Misc.getLastChar(previousWord) == "." ||
         Misc.getLastChar(previousWord) == "?" ||
         Misc.getLastChar(previousWord) == "!") &&
-      Config.language.split("_")[0] != "code"
+      currentLanguage != "code"
     ) {
       //always capitalise the first word or if there was a dot unless using a code alphabet
+
       word = Misc.capitalizeFirstLetter(word);
+
+      if (currentLanguage == "spanish" || currentLanguage == "catalan") {
+        let rand = Math.random();
+        if (rand > 0.9) {
+          word = "¿" + word;
+          spanishSentenceTracker = "?";
+        } else if (rand > 0.8) {
+          word = "¡" + word;
+          spanishSentenceTracker = "!";
+        }
+      }
     } else if (
       (Math.random() < 0.1 &&
         Misc.getLastChar(previousWord) != "." &&
@@ -193,34 +219,50 @@ export function punctuateWord(previousWord, currentWord, index, maxindex) {
         index != maxindex - 2) ||
       index == maxindex - 1
     ) {
-      let rand = Math.random();
-      if (rand <= 0.8) {
-        word += ".";
-      } else if (rand > 0.8 && rand < 0.9) {
-        if (Config.language.split("_")[0] == "french") {
-          word = "?";
-        } else {
-          word += "?";
+      if (currentLanguage == "spanish" || currentLanguage == "catalan") {
+        if (spanishSentenceTracker == "?" || spanishSentenceTracker == "!") {
+          word += spanishSentenceTracker;
+          spanishSentenceTracker = "";
         }
       } else {
-        if (Config.language.split("_")[0] == "french") {
-          word = "!";
+        let rand = Math.random();
+        if (rand <= 0.8) {
+          word += ".";
+        } else if (rand > 0.8 && rand < 0.9) {
+          if (currentLanguage == "french") {
+            word = "?";
+          } else if (
+            currentLanguage == "arabic" ||
+            currentLanguage == "persian" ||
+            currentLanguage == "urdu"
+          ) {
+            word += "؟";
+          } else if (currentLanguage == "greek") {
+            word += ";";
+          } else {
+            word += "?";
+          }
         } else {
-          word += "!";
+          if (currentLanguage == "french") {
+            word = "!";
+          } else {
+            word += "!";
+          }
         }
       }
     } else if (
       Math.random() < 0.01 &&
       Misc.getLastChar(previousWord) != "," &&
       Misc.getLastChar(previousWord) != "." &&
-      Config.language.split("_")[0] !== "russian"
+      currentLanguage !== "russian"
     ) {
       word = `"${word}"`;
     } else if (
       Math.random() < 0.011 &&
       Misc.getLastChar(previousWord) != "," &&
       Misc.getLastChar(previousWord) != "." &&
-      Config.language.split("_")[0] !== "russian"
+      currentLanguage !== "russian" &&
+      currentLanguage !== "ukrainian"
     ) {
       word = `'${word}'`;
     } else if (
@@ -228,7 +270,7 @@ export function punctuateWord(previousWord, currentWord, index, maxindex) {
       Misc.getLastChar(previousWord) != "," &&
       Misc.getLastChar(previousWord) != "."
     ) {
-      if (Config.language.split("_")[0] == "code") {
+      if (currentLanguage == "code") {
         let r = Math.random();
         if (r < 0.25) {
           word = `(${word})`;
@@ -243,8 +285,11 @@ export function punctuateWord(previousWord, currentWord, index, maxindex) {
         word = `(${word})`;
       }
     } else if (Math.random() < 0.013) {
-      if (Config.language.split("_")[0] == "french") {
+      if (currentLanguage == "french") {
         word = ":";
+      }
+      if (currentLanguage == "greek") {
+        word = "·";
       } else {
         word += ":";
       }
@@ -261,17 +306,25 @@ export function punctuateWord(previousWord, currentWord, index, maxindex) {
       Misc.getLastChar(previousWord) != "." &&
       Misc.getLastChar(previousWord) != ";"
     ) {
-      if (Config.language.split("_")[0] == "french") {
+      if (currentLanguage == "french") {
         word = ";";
+      }
+      if (currentLanguage == "greek") {
+        word = "·";
       } else {
         word += ";";
       }
     } else if (Math.random() < 0.2 && Misc.getLastChar(previousWord) != ",") {
-      word += ",";
-    } else if (
-      Math.random() < 0.25 &&
-      Config.language.split("_")[0] == "code"
-    ) {
+      if (
+        currentLanguage == "arabic" ||
+        currentLanguage == "urdu" ||
+        currentLanguage == "persian"
+      ) {
+        word += "،";
+      } else {
+        word += ",";
+      }
+    } else if (Math.random() < 0.25 && currentLanguage == "code") {
       let specials = ["{", "}", "[", "]", "(", ")", ";", "=", "+", "%", "/"];
 
       word = specials[Math.floor(Math.random() * 10)];
@@ -305,6 +358,7 @@ export function startTest() {
   $("#liveWpm").text("0");
   LiveWpm.show();
   LiveAcc.show();
+  LiveBurst.show();
   TimerProgress.update(TestTimer.time);
   TestTimer.clear();
 
@@ -436,14 +490,16 @@ export async function init() {
           (wordset.length < 3 || PractiseMissed.before.mode !== null)
         ) {
           randomWord = wordset[Math.floor(Math.random() * wordset.length)];
-        } else  {
+        } else {
+          let regenarationCount = 0; //infinite loop emergency stop button
           while (
-            randomWord == previousWord ||
-            randomWord == previousWord2 ||
-            (!Config.punctuation && randomWord == "I") ||
-            randomWord.indexOf(" ") > -1
+            regenarationCount < 100 &&
+            (randomWord == previousWord ||
+              randomWord == previousWord2 ||
+              (!Config.punctuation && randomWord == "I") ||
+              randomWord.indexOf(" ") > -1)
           ) {
-            console.log('rerandomising');
+            regenarationCount++;
             randomWord = wordset[Math.floor(Math.random() * wordset.length)];
           }
         }
@@ -476,6 +532,8 @@ export async function init() {
           UpdateConfig.setPunctuation(false, true);
           UpdateConfig.setNumbers(false, true);
           randomWord = Misc.getASCII();
+        } else if (Config.funbox === "weakspot") {
+          randomWord = WeakSpot.getWord(wordset);
         }
 
         if (Config.punctuation) {
@@ -687,7 +745,7 @@ export function restart(
   }
 
   let repeatWithPace = false;
-  if (TestUI.resultVisible) {
+  if (TestUI.resultVisible && Config.repeatedPace && withSameWordset) {
     repeatWithPace = true;
   }
 
@@ -702,6 +760,7 @@ export function restart(
   Replay.stopReplayRecording();
   LiveWpm.hide();
   LiveAcc.hide();
+  LiveBurst.hide();
   TimerProgress.hide();
   setBailout(false);
   PaceCaret.reset();
@@ -744,13 +803,13 @@ export function restart(
       $("#typingTest").css("opacity", 0).removeClass("hidden");
       if (!withSameWordset) {
         setRepeated(false);
-        if (repeatWithPace) setPaceRepeat(false);
+        setPaceRepeat(repeatWithPace);
         setHasTab(false);
         await init();
         PaceCaret.init(nosave);
       } else {
         setRepeated(true);
-        if (repeatWithPace) setPaceRepeat(true);
+        setPaceRepeat(repeatWithPace);
         setActive(false);
         Replay.stopReplayRecording();
         words.resetCurrentIndex();
@@ -769,8 +828,10 @@ export function restart(
       }
       document.querySelector("#miniTimerAndLiveWpm .wpm").innerHTML = "0";
       document.querySelector("#miniTimerAndLiveWpm .acc").innerHTML = "100%";
+      document.querySelector("#miniTimerAndLiveWpm .burst").innerHTML = "0";
       document.querySelector("#liveWpm").innerHTML = "0";
       document.querySelector("#liveAcc").innerHTML = "100%";
+      document.querySelector("#liveBurst").innerHTML = "0";
 
       if (Config.funbox === "memory") {
         Funbox.startMemoryTimer();
@@ -794,7 +855,7 @@ export function restart(
         fbtext = " " + Config.funbox;
       }
       $(".pageTest #premidTestMode").text(
-        `${Config.mode} ${mode2} ${Config.language}${fbtext}`
+        `${Config.mode} ${mode2} ${Config.language.replace(/_/g, " ")}${fbtext}`
       );
       $(".pageTest #premidSecondsLeft").text(Config.time);
 
@@ -1002,8 +1063,15 @@ export function finish(difficultyFailed = false) {
   LiveWpm.hide();
   PbCrown.hide();
   LiveAcc.hide();
+  LiveBurst.hide();
   TimerProgress.hide();
   Funbox.activate("none", null);
+
+  if (TestStats.burstHistory.length !== input.getHistory().length) {
+    //auto ended test, need one more calculation for the last word
+    let burst = TestStats.calculateBurst();
+    TestStats.pushBurstToHistory(burst);
+  }
 
   if (
     Misc.roundTo2(TestStats.calculateTestSeconds()) % 1 != 0 &&
@@ -1040,7 +1108,7 @@ export function finish(difficultyFailed = false) {
 
   let testtime = stats.time;
 
-  if (TestStats.lastSecondNotRound) {
+  if (TestStats.lastSecondNotRound && !difficultyFailed) {
     let wpmAndRaw = calculateWpmAndRaw();
     TestStats.pushToWpmHistory(wpmAndRaw.wpm);
     TestStats.pushToRawHistory(wpmAndRaw.raw);
@@ -1144,6 +1212,14 @@ export function finish(difficultyFailed = false) {
   if (afkSecondsPercent > 0) {
     $("#result .stats .time .bottom .afk").text(afkSecondsPercent + "% afk");
   }
+  TodayTracker.addSeconds(
+    testtime +
+      (TestStats.incompleteSeconds < 0
+        ? 0
+        : Misc.roundTo2(TestStats.incompleteSeconds)) -
+      afkseconds
+  );
+  $("#result .stats .time .bottom .timeToday").text(TodayTracker.getString());
   $("#result .stats .key .bottom").text(testtime + "s");
   $("#words").removeClass("blurred");
   OutOfFocus.hide();
@@ -1293,7 +1369,7 @@ export function finish(difficultyFailed = false) {
   }
 
   if (difficultyFailed) {
-    Notifications.add("Test failed", 0, 1);
+    Notifications.add(`Test failed - ${failReason}`, 0, 1);
   } else if (afkDetected) {
     Notifications.add("Test invalid - AFK detected", 0);
   } else if (isRepeated) {
@@ -1436,6 +1512,13 @@ export function finish(difficultyFailed = false) {
             if (lpb < stats.wpm && stats.wpm < highestwpm) {
               dontShowCrown = true;
             }
+            if (
+              Config.funbox !== "none" &&
+              Config.funbox !== "plus_one" &&
+              Config.funbox !== "plus_two"
+            ) {
+              dontShowCrown = true;
+            }
             if (Config.mode == "quote") dontShowCrown = true;
             if (lpb < stats.wpm) {
               //new pb based on local
@@ -1559,7 +1642,9 @@ export function finish(difficultyFailed = false) {
               }
             });
             if (
-              completedEvent.funbox === "none" &&
+              (completedEvent.funbox === "none" ||
+                completedEvent.funbox === "plus_one" ||
+                completedEvent.funbox === "plus_two") &&
               completedEvent.language === "english" &&
               completedEvent.mode === "time" &&
               ["15", "60"].includes(String(completedEvent.mode2))
@@ -1661,6 +1746,10 @@ export function finish(difficultyFailed = false) {
                     if (e.data.resultCode === 2) {
                       //new pb
                       PbCrown.show();
+                      $("#result .stats .wpm .crown").attr(
+                        "aria-label",
+                        "+" + Misc.roundTo2(pbDiff)
+                      );
                       DB.saveLocalPB(
                         Config.mode,
                         mode2,
@@ -1745,7 +1834,7 @@ export function finish(difficultyFailed = false) {
     Config.funbox !== "ascii" &&
     Config.funbox !== "58008"
   ) {
-    testType += "<br>" + lang;
+    testType += "<br>" + lang.replace(/_/g, " ");
   }
   if (Config.punctuation) {
     testType += "<br>punctuation";
@@ -1772,7 +1861,7 @@ export function finish(difficultyFailed = false) {
   //   otherText += "<br>" + Config.layout;
   // }
   if (difficultyFailed) {
-    otherText += "<br>failed";
+    otherText += `<br>failed (${failReason})`;
   }
   if (afkDetected) {
     otherText += "<br>afk detected";
@@ -1879,21 +1968,27 @@ export function finish(difficultyFailed = false) {
       TestUI.setResultCalculating(false);
       $("#words").empty();
       ChartController.result.resize();
-      if (Config.alwaysShowWordsHistory) {
-        TestUI.toggleResultWords();
+
+      if (TestUI.heatmapEnabled) {
+        TestUI.applyBurstHeatmap();
       }
       $("#testModesNotice").addClass("hidden");
     },
     () => {
+      if (Config.alwaysShowWordsHistory) {
+        TestUI.toggleResultWords();
+      }
       Keymap.hide();
     }
   );
 }
 
-export function fail() {
+let failReason = "";
+export function fail(reason) {
+  failReason = reason;
   input.pushHistory();
   corrected.pushHistory();
-  // TestStats.pushKeypressesToHistory();
+  TestStats.pushKeypressesToHistory();
   finish(true);
   let testSeconds = TestStats.calculateTestSeconds(performance.now());
   let afkseconds = TestStats.calculateAfkSeconds(testSeconds);

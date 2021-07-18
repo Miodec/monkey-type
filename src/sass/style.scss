@@ -1221,12 +1221,29 @@ label.checkbox {
       overflow-y: scroll;
       max-height: calc(100vh - 10rem - 3rem);
       display: grid;
+      cursor: pointer;
 
       .entry {
         padding: 0.5rem 1rem;
         font-size: 0.75rem;
         line-height: 0.75rem;
         color: var(--sub-color);
+        display: grid;
+        grid-template-columns: auto 1fr;
+
+        div {
+          pointer-events: none;
+        }
+
+        .textIcon {
+          font-weight: 900;
+          /* width: 1.25rem; */
+          display: inline-block;
+          letter-spacing: -0.1rem;
+          margin-right: 0.5rem;
+          text-align: center;
+          width: 1.25em;
+        }
 
         .fas {
           margin-right: 0.5rem;
@@ -1301,6 +1318,10 @@ label.checkbox {
 }
 
 #liveAcc {
+  opacity: 0;
+}
+
+#liveBurst {
   opacity: 0;
 }
 
@@ -1858,6 +1879,43 @@ key {
     // grid-area: wordsHistory;
     color: var(--sub-color);
     grid-column: 1/3;
+    .heatmapLegend {
+      display: inline-grid;
+      grid-template-columns: auto auto auto;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: var(--sub-color);
+      width: min-content;
+      .boxes {
+        display: flex;
+        .box {
+          width: 1rem;
+          height: 1rem;
+        }
+        .box:nth-child(1) {
+          background: var(--colorful-error-color);
+          border-radius: var(--roundness) 0 0 var(--roundness);
+        }
+        .box:nth-child(2) {
+          background: var(--colorful-error-color);
+          filter: opacity(0.6);
+        }
+        .box:nth-child(3) {
+          background: var(--sub-color);
+        }
+        .box:nth-child(4) {
+          background: var(--main-color);
+          filter: opacity(0.6);
+        }
+        .box:nth-child(5) {
+          background: var(--main-color);
+          border-radius: 0 var(--roundness) var(--roundness) 0;
+        }
+      }
+    }
+    .title {
+      user-select: none;
+    }
     .words {
       display: flex;
       flex-wrap: wrap;
@@ -1867,6 +1925,32 @@ key {
       .word {
         position: relative;
         margin: 0.18rem 0.6rem 0.15rem 0;
+        letter.correct {
+          color: var(--text-color);
+        }
+        letter.incorrect {
+          color: var(--error-color);
+        }
+        letter.incorrect.extra {
+          color: var(--error-extra-color);
+        }
+        &.heatmap-0 letter {
+          color: var(--colorful-error-color);
+        }
+        &.heatmap-1 letter {
+          color: var(--colorful-error-color);
+          filter: opacity(0.6);
+        }
+        &.heatmap-2 letter {
+          color: var(--sub-color);
+        }
+        &.heatmap-3 letter {
+          color: var(--main-color);
+          filter: opacity(0.6);
+        }
+        &.heatmap-4 letter {
+          color: var(--main-color);
+        }
       }
       &.rightToLeftTest {
         //flex-direction: row-reverse; // no need for hacking 😉, CSS fully support right-to-left languages
@@ -1881,15 +1965,6 @@ key {
           display: inline;
         }
       }
-    }
-    .correct {
-      color: var(--text-color);
-    }
-    .incorrect {
-      color: var(--error-color);
-    }
-    .incorrect.extra {
-      color: var(--error-extra-color);
     }
   }
 
@@ -1939,7 +2014,8 @@ key {
     //   "wpm raw time nothing infoAndTags leaderboards source";
     grid-template-areas:
       "wpm"
-      "acc";
+      "acc"
+      "burst";
 
     &.morestats {
       display: grid;
@@ -1974,7 +2050,8 @@ key {
       }
 
       &.time {
-        .afk {
+        .afk,
+        .timeToday {
           color: var(--sub-color);
           font-size: 0.75rem;
           line-height: 0.75rem;
@@ -2077,6 +2154,20 @@ key {
 
     .acc {
       grid-area: acc;
+
+      .top {
+        font-size: 2rem;
+        line-height: 1.5rem;
+      }
+
+      .bottom {
+        font-size: 4rem;
+        line-height: 4rem;
+      }
+    }
+
+    .burst {
+      grid-area: burst;
 
       .top {
         font-size: 2rem;
@@ -2390,13 +2481,15 @@ key {
         margin-right: 2rem;
       }
 
-      .wpm {
+      .wpm,
+      .acc {
         margin-right: 2rem;
       }
 
       .time,
       .wpm,
-      .acc {
+      .acc,
+      .burst {
         opacity: 0;
       }
 
@@ -2488,6 +2581,11 @@ key {
     transition: 0.25s;
     text-shadow: none;
     top: -0.5rem;
+    z-index: 10;
+    cursor: text;
+    .speed {
+      font-size: 0.75rem;
+    }
   }
 }
 
@@ -2590,10 +2688,10 @@ key {
   opacity: 0.5;
 }
 
-.pageLoading{
+.pageLoading {
   display: grid;
   justify-content: center;
-  .preloader{
+  .preloader {
     font-size: 2rem;
     justify-self: center;
     color: var(--main-color);
@@ -2805,47 +2903,22 @@ key {
       }
     }
 
-    // I have no idea what I'm doing so I just copied the customBackgroundSize css and changed numbers so it magically worked.
-    &.customLayoutfluid {
-      .inputAndSave {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        input {
-          grid-column: 1/3;
-        }
-
-        .save {
-          grid-column: 3/4;
-          height: auto;
-
-          .fas {
-            margin-right: 0rem;
-            vertical-align: sub;
-          }
-        }
+    .inputAndSave {
+      display: grid;
+      grid-template-columns: 8fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      input {
+        // grid-column: 1/3;
       }
-    }
 
-    &.customBackgroundSize {
-      .inputAndButton {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        input {
-          grid-column: 1/3;
-        }
+      .save {
+        // grid-column: 3/4;
+        height: auto;
 
-        .save {
-          grid-column: 3/4;
-          height: auto;
-
-          .fas {
-            margin-right: 0rem;
-            vertical-align: sub;
-          }
+        .fas {
+          margin-right: 0rem;
+          vertical-align: sub;
         }
       }
     }
@@ -2890,13 +2963,6 @@ key {
 
       & .spacer {
         grid-column: 3 / 5;
-      }
-    }
-
-    &.paceCaret {
-      .customPaceCaretSpeed {
-        width: 4rem;
-        padding: 0 0.5rem;
       }
     }
 
@@ -2956,44 +3022,9 @@ key {
         grid-area: buttons;
       }
 
-      .tagsList {
-        display: grid;
-        gap: 0.5rem;
-
-        .tag {
-          display: grid;
-          display: grid;
-          grid-template-columns: auto 1fr auto auto auto;
-          color: var(--text-color);
-
-          .title {
-            align-self: center;
-          }
-
-          .editButton,
-          .clearPbButton,
-          .removeButton,
-          .active {
-            display: grid;
-            grid-auto-flow: column;
-            align-content: center;
-            transition: 0.25s;
-            padding: 0 0.5rem;
-            border-radius: var(--roundness);
-            color: var(--sub-color);
-
-            &:focus {
-              color: var(--sub-color);
-              border: none;
-              outline: none;
-            }
-
-            &:hover {
-              cursor: pointer;
-              color: var(--text-color);
-            }
-          }
-        }
+      .tag {
+        grid-template-columns: 6fr 1fr 1fr 1fr;
+        margin-bottom: 0.5rem;
       }
 
       .addTagButton {
@@ -3032,7 +3063,7 @@ key {
       }
 
       .preset {
-        grid-template-columns: 5fr 1fr 1fr;
+        grid-template-columns: 7fr 1fr 1fr;
         margin-bottom: 0.5rem;
       }
 

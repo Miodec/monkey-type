@@ -477,7 +477,11 @@ async function checkIfPB(uid, obj, userdata) {
   if (obj.mode == "quote") {
     return false;
   }
-  if (obj.funbox !== "none") {
+  if (
+    obj.funbox !== "none" &&
+    obj.funbox !== "plus_one" &&
+    obj.funbox !== "plus_two"
+  ) {
     return false;
   }
   try {
@@ -777,7 +781,7 @@ exports.clearTagPb = functions.https.onCall((request, response) => {
       .collection(`users/${request.uid}/tags`)
       .doc(request.tagid)
       .update({
-        pb: 0,
+        personalBests: admin.firestore.FieldValue.delete(),
       })
       .then((e) => {
         return {

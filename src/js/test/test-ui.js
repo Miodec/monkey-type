@@ -15,6 +15,8 @@ import * as ManualRestart from "./manual-restart-tracker";
 import * as PractiseMissed from "./practise-missed";
 import * as Misc from "./misc";
 import * as Replay from "./replay";
+import * as TestStats from "./test-stats";
+import * as Misc from "./misc";
 
 export let currentWordElementIndex = 0;
 export let resultVisible = false;
@@ -191,6 +193,7 @@ export function screenshot() {
     $("#notificationCenter").removeClass("hidden");
     $("#commandLineMobileButton").removeClass("hidden");
     $(".pageTest .ssWatermark").addClass("hidden");
+    $(".pageTest .ssWatermark").text("monkeytype.com");
     $(".pageTest .buttons").removeClass("hidden");
     if (revealReplay) $("#resultReplay").removeClass("hidden");
     if (firebase.auth().currentUser == null)
@@ -203,6 +206,11 @@ export function screenshot() {
   }
   $("#resultReplay").addClass("hidden");
   $(".pageTest .ssWatermark").removeClass("hidden");
+  if (firebase.auth().currentUser != null) {
+    $(".pageTest .ssWatermark").text(
+      DB.getSnapshot().name + " | monkeytype.com"
+    );
+  }
   $(".pageTest .buttons").addClass("hidden");
   let src = $("#middle");
   var sourceX = src.position().left; /*X position from div#target*/
@@ -390,6 +398,14 @@ export function updateWordElement(showError = !Config.blindMode) {
         }
       }
     }
+
+    if (Config.highlightMode === "letter" && Config.hideExtraLetters) {
+      if (input.length > currentWord.length) {
+        $(wordAtIndex).addClass("error");
+      } else if (input.length == currentWord.length) {
+        $(wordAtIndex).removeClass("error");
+      }
+    }
   }
   wordAtIndex.innerHTML = ret;
   if (newlineafter) $("#words").append("<div class='newline'></div>");
@@ -520,8 +536,6 @@ export function updateModesNotice() {
           ? "average"
           : Config.paceCaret === "pb"
           ? "pb"
-          : Config.paceCaret == "repeat"
-          ? "repeated"
           : "custom"
       } pace${speed}</div>`
     );
@@ -536,6 +550,14 @@ export function updateModesNotice() {
   if (Config.minAcc !== "off") {
     $(".pageTest #testModesNotice").append(
       `<div class="text-button" commands="commandsMinAcc"><i class="fas fa-bomb"></i>min ${Config.minAccCustom}% acc</div>`
+    );
+  }
+
+  if (Config.minBurst !== "off") {
+    $(".pageTest #testModesNotice").append(
+      `<div class="text-button" commands="commandsMinBurst"><i class="fas fa-bomb"></i>min ${
+        Config.minBurstCustomSpeed
+      } burst ${Config.minBurst === "flex" ? "(flex)" : ""}</div>`
     );
   }
 
@@ -636,14 +658,16 @@ async function loadWordsHistory() {
         TestLogic.corrected.getHistory(i) !== undefined &&
         TestLogic.corrected.getHistory(i) !== ""
       ) {
-        wordEl = `<div class='word' input="${TestLogic.corrected
+        wordEl = `<div class='word' burst="${
+          TestStats.burstHistory[i]
+        }" input="${TestLogic.corrected
           .getHistory(i)
           .replace(/"/g, "&quot;")
           .replace(/ /g, "_")}">`;
       } else {
-        wordEl = `<div class='word' input="${input
-          .replace(/"/g, "&quot;")
-          .replace(/ /g, "_")}">`;
+        wordEl = `<div class='word' burst="${
+          TestStats.burstHistory[i]
+        }" input="${input.replace(/"/g, "&quot;").replace(/ /g, "_")}">`;
       }
       if (i === TestLogic.input.history.length - 1) {
         //last word
@@ -668,16 +692,16 @@ async function loadWordsHistory() {
         }
         if (wordstats.incorrect !== 0 || Config.mode !== "time") {
           if (Config.mode != "zen" && input !== word) {
-            wordEl = `<div class='word error' input="${input
-              .replace(/"/g, "&quot;")
-              .replace(/ /g, "_")}">`;
+            wordEl = `<div class='word error' burst="${
+              TestStats.burstHistory[i]
+            }" input="${input.replace(/"/g, "&quot;").replace(/ /g, "_")}">`;
           }
         }
       } else {
         if (Config.mode != "zen" && input !== word) {
-          wordEl = `<div class='word error' input="${input
-            .replace(/"/g, "&quot;")
-            .replace(/ /g, "_")}">`;
+          wordEl = `<div class='word error' burst="${
+            TestStats.burstHistory[i]
+          }" input="${input.replace(/"/g, "&quot;").replace(/ /g, "_")}">`;
         }
       }
 
@@ -781,6 +805,87 @@ export function toggleResultWords() {
     }
   }
 }
+export let heatmapEnabled = false;
+function toggleBurstHeatmap() {
+  if (!heatmapEnabled) {
+    applyBurstHeatmap();
+  } else {
+    //clear all classes
+    $("#resultWordsHistory .heatmapLegend").addClass("hidden");
+    $("#resultWordsHistory .words .word").removeClass("heatmap-0");
+    $("#resultWordsHistory .words .word").removeClass("heatmap-1");
+    $("#resultWordsHistory .words .word").removeClass("heatmap-2");
+    $("#resultWordsHistory .words .word").removeClass("heatmap-3");
+    $("#resultWordsHistory .words .word").removeClass("heatmap-4");
+  }
+  heatmapEnabled = !heatmapEnabled;
+}
+
+export function applyBurstHeatmap() {
+  $("#resultWordsHistory .heatmapLegend").removeClass("hidden");
+  let min = Math.min(...TestStats.burstHistory);
+  let max = Math.max(...TestStats.burstHistory);
+  // let step = (max - min) / 5;
+  // let steps = [
+  //   {
+  //     val: min,
+  //     class: 'heatmap-0'
+  //   },
+  //   {
+  //     val: min + (step * 1),
+  //     class: 'heatmap-1'
+  //   },
+  //   {
+  //     val: min + (step * 2),
+  //     class: 'heatmap-2'
+  //   },
+  //   {
+  //     val: min + (step * 3),
+  //     class: 'heatmap-3'
+  //   },
+  //   {
+  //     val: min + (step * 4),
+  //     class: 'heatmap-4'
+  //   },
+  // ];
+  let median = Misc.median(TestStats.burstHistory);
+  let adatm = [];
+  TestStats.burstHistory.forEach((burst) => {
+    adatm.push(Math.abs(median - burst));
+  });
+  let step = Misc.mean(adatm);
+  // let step = Misc.stdDev(TestStats.burstHistory)/2;
+  let steps = [
+    {
+      val: 0,
+      class: "heatmap-0",
+    },
+    {
+      val: median - step * 1.5,
+      class: "heatmap-1",
+    },
+    {
+      val: median - step * 0.5,
+      class: "heatmap-2",
+    },
+    {
+      val: median + step * 0.5,
+      class: "heatmap-3",
+    },
+    {
+      val: median + step * 1.5,
+      class: "heatmap-4",
+    },
+  ];
+  $("#resultWordsHistory .words .word").each((index, word) => {
+    let wordBurstVal = parseInt($(word).attr("burst"));
+    let cls = "";
+    steps.forEach((step) => {
+      if (wordBurstVal > step.val) cls = step.class;
+    });
+    $(word).addClass(cls);
+  });
+}
 
 export function highlightBadWord(index, showError) {
   if (!showError) return;
@@ -817,6 +922,10 @@ $(".pageTest #copyWordsListButton").click(async (event) => {
   }
 });
 
+$(".pageTest #toggleBurstHeatmap").click(async (event) => {
+  toggleBurstHeatmap();
+});
+
 $(document).on("mouseleave", "#resultWordsHistory .words .word", (e) => {
   $(".wordInputAfter").remove();
 });
@@ -828,13 +937,21 @@ $("#wpmChart").on("mouseleave", (e) => {
 $(document).on("mouseenter", "#resultWordsHistory .words .word", (e) => {
   if (resultVisible) {
     let input = $(e.currentTarget).attr("input");
+    let burst = $(e.currentTarget).attr("burst");
     if (input != undefined)
       $(e.currentTarget).append(
-        `<div class="wordInputAfter">${input
-          .replace(/\t/g, "_")
-          .replace(/\n/g, "_")
-          .replace(/</g, "&lt")
-          .replace(/>/g, "&gt")}</div>`
+        `<div class="wordInputAfter">
+          <div class="text">
+          ${input
+            .replace(/\t/g, "_")
+            .replace(/\n/g, "_")
+            .replace(/</g, "&lt")
+            .replace(/>/g, "&gt")}
+          </div>
+          <div class="speed">
+          ${burst}wpm
+          </div>
+          </div>`
       );
   }
 });
