@@ -21,6 +21,7 @@ import * as TestTimer from "./test-timer";
 import * as Focus from "./focus";
 import * as ShiftTracker from "./shift-tracker";
 import * as Replay from "./replay.js";
+import * as MonkeyPower from "./monkey-power";
 
 let dontInsertSpace = false;
 let inputValueBeforeChange = " ";
@@ -188,6 +189,7 @@ function handleSpace() {
 
   //correct word or in zen mode
   const isWordCorrect = currentWord == inputWord || Config.mode == "zen";
+  MonkeyPower.addPower(isWordCorrect, true);
   PaceCaret.handleSpace(isWordCorrect, currentWord);
   TestStats.incrementAccuracy(isWordCorrect);
   if (isWordCorrect) {
@@ -412,6 +414,7 @@ function handleLastChar() {
 
   if (!thisCharCorrect && Misc.trailingComposeChars.test(char)) return;
 
+  MonkeyPower.addPower(thisCharCorrect);
   TestStats.incrementAccuracy(thisCharCorrect);
 
   if (!thisCharCorrect) {

@@ -28,6 +28,7 @@ import * as ThemeColors from "./theme-colors";
 import * as CloudFunctions from "./cloud-functions";
 import * as TestLeaderboards from "./test-leaderboards";
 import * as Replay from "./replay.js";
+import * as MonkeyPower from "./monkey-power";
 
 export let notSignedInLastResult = null;
 
@@ -131,6 +132,7 @@ export let bailout = false;
 
 export function setActive(tf) {
   active = tf;
+  if (!tf) MonkeyPower.reset();
 }
 
 export function setRepeated(tf) {
@@ -617,9 +619,10 @@ export function restart(
   if (active) {
     TestStats.pushKeypressesToHistory();
     let testSeconds = TestStats.calculateTestSeconds(performance.now());
-    let afkseconds = TestStats.calculateAfkSeconds();
+    let afkseconds = TestStats.calculateAfkSeconds(testSeconds);
     // incompleteTestSeconds += ;
     let tt = testSeconds - afkseconds;
+    if (tt < 0) tt = 0;
     console.log(
       `increasing incomplete time by ${tt}s (${testSeconds}s - ${afkseconds}s afk)`
     );
@@ -992,7 +995,7 @@ export function finish(difficultyFailed = false) {
   lastTestWpm = stats.wpm;
 
   let testtime = stats.time;
-  let afkseconds = TestStats.calculateAfkSeconds();
+  let afkseconds = TestStats.calculateAfkSeconds(testtime);
   let afkSecondsPercent = Misc.roundTo2((afkseconds / testtime) * 100);
 
   ChartController.result.options.annotation.annotations = [];
@@ -1816,7 +1819,9 @@ export function fail() {
   TestStats.pushKeypressesToHistory();
   finish(true);
   let testSeconds = TestStats.calculateTestSeconds(performance.now());
-  let afkseconds = TestStats.calculateAfkSeconds();
-  TestStats.incrementIncompleteSeconds(testSeconds - afkseconds);
+  let afkseconds = TestStats.calculateAfkSeconds(testSeconds);
+  let tt = testSeconds - afkseconds;
+  if (tt < 0) tt = 0;
+  TestStats.incrementIncompleteSeconds(tt);
   TestStats.incrementRestartCount();
 }

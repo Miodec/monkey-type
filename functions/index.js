@@ -1093,9 +1093,7 @@ async function getIncrementedTypingStats(userData, resultObj) {
   }
 }
 
-async function getUpdatedLbMemory(userdata, mode, mode2, globallb, dailylb) {
-  let lbmemory = userdata.lbMemory;
-
+async function getUpdatedLbMemory(lbmemory, mode, mode2, globallb, dailylb) {
   if (lbmemory === undefined) {
     lbmemory = {};
   }
@@ -2643,7 +2641,7 @@ exports.checkLeaderboards = functions.https.onRequest(
             response.status(200).send({
               data: {
                 status: -999,
-                message: error,
+                message: error.message,
               },
             });
           });
@@ -2723,7 +2721,7 @@ exports.checkLeaderboards = functions.https.onRequest(
             response.status(200).send({
               data: {
                 status: -999,
-                message: error,
+                message: error.message,
               },
             });
           });
@@ -2804,7 +2802,7 @@ exports.checkLeaderboards = functions.https.onRequest(
       response.status(200).send({
         data: {
           status: -999,
-          message: e,
+          message: e.message,
         },
       });
       return;
