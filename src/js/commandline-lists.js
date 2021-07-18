@@ -16,6 +16,7 @@ import * as TagController from "./tag-controller";
 import * as PresetController from "./preset-controller";
 import * as Commandline from "./commandline";
 import * as CustomText from "./custom-text";
+import * as Settings from "./settings";
 
 export let current = [];
 
@@ -544,13 +545,6 @@ let commandsPaceCaretStyle = {
   title: "Change pace caret style...",
   list: [
     {
-      id: "setPaceCaretStyleOff",
-      display: "off",
-      exec: () => {
-        UpdateConfig.setPaceCaretStyle("off");
-      },
-    },
-    {
       id: "setPaceCaretStyleDefault",
       display: "line",
       exec: () => {
@@ -632,6 +626,7 @@ let commandsPaceCaret = {
     },
   ],
 };
+
 
 let commandsMinWpm = {
   title: "Change min wpm mode...",
@@ -1670,6 +1665,13 @@ export let defaultCommands = {
       },
     },
     {
+      id: "toggleRepeatedPace",
+      display: "Toggle repeated pace",
+      exec: () => {
+        UpdateConfig.toggleRepeatedPace();
+      },
+    },
+    {
       id: "changeTimerStyle",
       display: "Change timer/progress style...",
       subgroup: true,
@@ -1999,6 +2001,32 @@ export let defaultCommands = {
       exec: () => {
         current.push(commandsCopyWordsToClipboard);
         Commandline.show();
+      },
+    },
+    {
+      id: "importSettingsJSON",
+      display: "Import settings JSON",
+      input: true,
+      exec: (input) => {
+        try {
+          UpdateConfig.apply(JSON.parse(input));
+          UpdateConfig.saveToLocalStorage();
+          Settings.update();
+          Notifications.add("Done",1);
+        } catch (e) {
+          Notifications.add(
+            "An error occured while importing settings: " + e,
+            -1
+          );
+        }
+      },
+    },
+    {
+      id: "exportSettingsJSON",
+      display: "Export settings JSON",
+      input: true,
+      defaultValue:"",
+      exec: (input) => {
       },
     },
   ],

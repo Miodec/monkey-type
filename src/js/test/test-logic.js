@@ -123,6 +123,8 @@ export let input = new InputWordListBound();
 export let corrected = new InputWordList();
 export let currentWordIndex = 0;
 export let isRepeated = false;
+export let isPaceRepeat = false;
+export let lastTestWpm = 0;
 export let hasTab = false;
 export let randomQuote = null;
 export let bailout = false;
@@ -133,6 +135,10 @@ export function setActive(tf) {
 
 export function setRepeated(tf) {
   isRepeated = tf;
+}
+
+export function setPaceRepeat(tf) {
+  isPaceRepeat = tf;
 }
 
 export function setHasTab(tf) {
@@ -295,7 +301,11 @@ export function startTest() {
   }
 
   try {
-    if (Config.paceCaret !== "off") PaceCaret.start();
+    if (
+      Config.paceCaret !== "off" ||
+      (Config.repeatedPace && isPaceRepeat)
+    )
+      PaceCaret.start();
   } catch (e) {}
   //use a recursive self-adjusting timer to avoid time drift
   TestStats.setStart(performance.now());
@@ -566,7 +576,12 @@ export async function init() {
   }
 }
 
-export function restart(withSameWordset = false, nosave = false, event) {
+export function restart(
+  withSameWordset = false,
+  nosave = false,
+  event,
+  practiseMissed = false
+) {
   if (TestUI.testRestarting || TestUI.resultCalculating) {
     try {
       event.preventDefault();
@@ -628,7 +643,11 @@ export function restart(withSameWordset = false, nosave = false, event) {
     $("#words").empty();
   }
 
-  if (PractiseMissed.before.mode !== null && !withSameWordset) {
+  if (
+    PractiseMissed.before.mode !== null &&
+    !withSameWordset &&
+    !practiseMissed
+  ) {
     Notifications.add("Reverting to previous settings.", 0);
     UpdateConfig.setMode(PractiseMissed.before.mode);
     UpdateConfig.setPunctuation(PractiseMissed.before.punctuation);
@@ -689,18 +708,20 @@ export function restart(withSameWordset = false, nosave = false, event) {
       $("#typingTest").css("opacity", 0).removeClass("hidden");
       if (!withSameWordset) {
         setRepeated(false);
+        setPaceRepeat(false);
         setHasTab(false);
         await init();
         PaceCaret.init(nosave);
       } else {
         setRepeated(true);
+        setPaceRepeat(true);
         setActive(false);
         Replay.stopReplayRecording();
         words.resetCurrentIndex();
         input.reset();
-        PaceCaret.init();
         TestUI.showWords();
         Funbox.activate();
+        PaceCaret.init();
       }
       if (Config.mode === "quote") {
         setRepeated(false);
@@ -970,6 +991,9 @@ export function finish(difficultyFailed = false) {
     inf = true;
   }
   TestTimer.clear();
+
+  lastTestWpm = stats.wpm;
+
   let testtime = stats.time;
   let afkseconds = TestStats.calculateAfkSeconds();
   let afkSecondsPercent = Misc.roundTo2((afkseconds / testtime) * 100);

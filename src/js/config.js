@@ -98,6 +98,7 @@ let defaultConfig = {
   showOutOfFocusWarning: true,
   paceCaret: "off",
   paceCaretCustomSpeed: 100,
+  repeatedPace: true,
   pageWidth: "100",
   chartAccuracy: true,
   chartStyle: "line",
@@ -142,7 +143,11 @@ export async function saveToLocalStorage(noDbCheck = false) {
   // });
   let save = config;
   delete save.resultFilters;
-  window.localStorage.setItem("config", JSON.stringify(save));
+  let stringified = JSON.stringify(save);
+  window.localStorage.setItem("config", stringified);
+  CommandlineLists.defaultCommands.list.filter(
+    (command) => command.id == "exportSettingsJSON"
+  )[0].defaultValue = stringified;
   // restartCount = 0;
   if (!noDbCheck) await DB.saveConfig(save);
 }
@@ -501,6 +506,24 @@ export function setPaceCaretCustomSpeed(val, nosave) {
   if (!nosave) saveToLocalStorage();
 }
 
+//repeated pace
+export function toggleRepeatedPace() {
+  let pace = !config.repeatedPace;
+  if (pace == undefined) {
+    pace = true;
+  }
+  config.repeatedPace = pace;
+  saveToLocalStorage();
+}
+
+export function setRepeatedPace(pace, nosave) {
+  if (pace == undefined) {
+    pace = true;
+  }
+  config.repeatedPace = pace;
+  if (!nosave) saveToLocalStorage();
+}
+
 //min wpm
 export function setMinWpm(minwpm, nosave) {
   if (minwpm == undefined) {
@@ -733,9 +756,7 @@ export function setPaceCaretStyle(caretStyle, nosave) {
   $("#paceCaret").removeClass("carrot");
   $("#paceCaret").removeClass("banana");
 
-  if (caretStyle == "off") {
-    $("#paceCaret").addClass("off");
-  } else if (caretStyle == "default") {
+  if (caretStyle == "default") {
     $("#paceCaret").addClass("default");
   } else if (caretStyle == "block") {
     $("#paceCaret").addClass("block");
@@ -835,6 +856,11 @@ export function setHighlightMode(mode, nosave) {
     mode = "letter";
   }
   config.highlightMode = mode;
+  // if(TestLogic.active){
+  try{
+  if (!nosave) TestUI.updateWordElement(config.blindMode);
+  }catch{}
+  // }
   if (!nosave) saveToLocalStorage();
 }
 
@@ -1499,6 +1525,7 @@ export function apply(configObj) {
     setShowOutOfFocusWarning(configObj.showOutOfFocusWarning, true);
     setPaceCaret(configObj.paceCaret, true);
     setPaceCaretCustomSpeed(configObj.paceCaretCustomSpeed, true);
+    setRepeatedPace(configObj.repeatedPace, true);
     setPageWidth(configObj.pageWidth, true);
     setChartAccuracy(configObj.chartAccuracy, true);
     setChartStyle(configObj.chartStyle, true);

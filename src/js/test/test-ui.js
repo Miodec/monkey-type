@@ -14,6 +14,7 @@ import * as OutOfFocus from "./out-of-focus";
 import * as ManualRestart from "./manual-restart-tracker";
 import * as PractiseMissed from "./practise-missed";
 import * as Misc from "./misc";
+import * as Replay from "./replay";
 
 export let currentWordElementIndex = 0;
 export let resultVisible = false;
@@ -185,6 +186,22 @@ export function colorful(tc) {
 }
 
 export function screenshot() {
+  let revealReplay = false;
+  function revertScreenshot() {
+    $("#notificationCenter").removeClass("hidden");
+    $("#commandLineMobileButton").removeClass("hidden");
+    $(".pageTest .ssWatermark").addClass("hidden");
+    $(".pageTest .buttons").removeClass("hidden");
+    if (revealReplay) $("#resultReplay").removeClass("hidden");
+    if (firebase.auth().currentUser == null)
+      $(".pageTest .loginTip").removeClass("hidden");
+  }
+
+  if (!$("#resultReplay").hasClass("hidden")) {
+    revealReplay = true;
+    Replay.pauseReplay();
+  }
+  $("#resultReplay").addClass("hidden");
   $(".pageTest .ssWatermark").removeClass("hidden");
   $(".pageTest .buttons").addClass("hidden");
   let src = $("#middle");
@@ -207,12 +224,7 @@ export function screenshot() {
         try {
           if (navigator.userAgent.toLowerCase().indexOf("firefox") > -1) {
             open(URL.createObjectURL(blob));
-            $("#notificationCenter").removeClass("hidden");
-            $("#commandLineMobileButton").removeClass("hidden");
-            $(".pageTest .ssWatermark").addClass("hidden");
-            $(".pageTest .buttons").removeClass("hidden");
-            if (firebase.auth().currentUser == null)
-              $(".pageTest .loginTip").removeClass("hidden");
+            revertScreenshot();
           } else {
             navigator.clipboard
               .write([
@@ -224,45 +236,25 @@ export function screenshot() {
                 ),
               ])
               .then(() => {
-                $("#notificationCenter").removeClass("hidden");
-                $("#commandLineMobileButton").removeClass("hidden");
                 Notifications.add("Copied to clipboard", 1, 2);
-                $(".pageTest .ssWatermark").addClass("hidden");
-                $(".pageTest .buttons").removeClass("hidden");
-                if (firebase.auth().currentUser == null)
-                  $(".pageTest .loginTip").removeClass("hidden");
+                revertScreenshot();
               });
           }
         } catch (e) {
-          $("#notificationCenter").removeClass("hidden");
-          $("#commandLineMobileButton").removeClass("hidden");
           Notifications.add(
             "Error saving image to clipboard: " + e.message,
             -1
           );
-          $(".pageTest .ssWatermark").addClass("hidden");
-          $(".pageTest .buttons").removeClass("hidden");
-          if (firebase.auth().currentUser == null)
-            $(".pageTest .loginTip").removeClass("hidden");
+          revertScreenshot();
         }
       });
     });
   } catch (e) {
-    $("#notificationCenter").removeClass("hidden");
-    $("#commandLineMobileButton").removeClass("hidden");
     Notifications.add("Error creating image: " + e.message, -1);
-    $(".pageTest .ssWatermark").addClass("hidden");
-    $(".pageTest .buttons").removeClass("hidden");
-    if (firebase.auth().currentUser == null)
-      $(".pageTest .loginTip").removeClass("hidden");
+    revertScreenshot();
   }
   setTimeout(() => {
-    $("#notificationCenter").removeClass("hidden");
-    $("#commandLineMobileButton").removeClass("hidden");
-    $(".pageTest .ssWatermark").addClass("hidden");
-    $(".pageTest .buttons").removeClass("hidden");
-    if (firebase.auth().currentUser == null)
-      $(".pageTest .loginTip").removeClass("hidden");
+    revertScreenshot();
   }, 3000);
 }
 
@@ -287,9 +279,7 @@ export function updateWordElement(showError = !Config.blindMode) {
         ret += `<letter class="correct">${TestLogic.input.currentWord[i]}</letter>`;
       }
     }
-  } else if (Config.highlightMode == "word") {
-    //only for word highlight
-
+  } else {
     let correctSoFar = false;
 
     // slice earlier if input has trailing compose characters
@@ -303,46 +293,11 @@ export function updateWordElement(showError = !Config.blindMode) {
       correctSoFar = true;
     }
 
-    let classString = correctSoFar ? "correct" : "incorrect";
+    let wordHighlightClassString = correctSoFar ? "correct" : "incorrect";
     if (Config.blindMode) {
-      classString = "correct";
+      wordHighlightClassString = "correct";
     }
 
-    //show letters in the current word
-    for (let i = 0; i < currentWord.length; i++) {
-      if (i === input.search(Misc.trailingComposeChars)) {
-        ret +=
-          `<letter class="${classString} dead">` + currentWord[i] + `</letter>`;
-      } else {
-        ret += `<letter class="${classString}">` + currentWord[i] + `</letter>`;
-      }
-    }
-
-    //show any extra letters if hide extra letters is disabled
-    if (input.length > currentWord.length && !Config.hideExtraLetters) {
-      for (let i = currentWord.length; i < input.length; i++) {
-        let letter = TestLogic.input.currentWord[i];
-        if (letter == " ") {
-          letter = "_";
-        }
-
-        if (
-          Misc.trailingComposeChars.test(input) &&
-          i > input.search(Misc.trailingComposeChars)
-        )
-          continue;
-
-        if (
-          Misc.trailingComposeChars.test(input) &&
-          i === input.search(Misc.trailingComposeChars)
-        ) {
-          ret += `<letter class="${classString} dead">${letter}</letter>`;
-        } else {
-          ret += `<letter class="${classString}">${letter}</letter>`;
-        }
-      }
-    }
-  } else {
     for (let i = 0; i < input.length; i++) {
       let charCorrect = currentWord[i] == input[i];
 
@@ -369,16 +324,25 @@ export function updateWordElement(showError = !Config.blindMode) {
         continue;
 
       if (charCorrect) {
-        ret += `<letter class="${correctClass} ${tabChar}${nlChar}">${currentLetter}</letter>`;
+        ret += `<letter class="${
+          Config.highlightMode == "word"
+            ? wordHighlightClassString
+            : correctClass
+        } ${tabChar}${nlChar}">${currentLetter}</letter>`;
       } else if (
         currentLetter !== undefined &&
         Misc.trailingComposeChars.test(input) &&
         i === input.search(Misc.trailingComposeChars)
       ) {
+        // TODO:
         ret += `<letter class="dead">${currentLetter}</letter>`;
       } else if (!showError) {
         if (currentLetter !== undefined) {
-          ret += `<letter class="${correctClass} ${tabChar}${nlChar}">${currentLetter}</letter>`;
+          ret += `<letter class="${
+            Config.highlightMode == "word"
+              ? wordHighlightClassString
+              : correctClass
+          } ${tabChar}${nlChar}">${currentLetter}</letter>`;
         }
       } else if (currentLetter === undefined) {
         if (!Config.hideExtraLetters) {
@@ -386,11 +350,19 @@ export function updateWordElement(showError = !Config.blindMode) {
           if (letter == " " || letter == "\t" || letter == "\n") {
             letter = "_";
           }
-          ret += `<letter class="incorrect extra ${tabChar}${nlChar}">${letter}</letter>`;
+          ret += `<letter class="${
+            Config.highlightMode == "word"
+              ? wordHighlightClassString
+              : "incorrect"
+          } extra ${tabChar}${nlChar}">${letter}</letter>`;
         }
       } else {
         ret +=
-          `<letter class="incorrect ${tabChar}${nlChar}">` +
+          `<letter class="${
+            Config.highlightMode == "word"
+              ? wordHighlightClassString
+              : "incorrect"
+          } ${tabChar}${nlChar}">` +
           currentLetter +
           (Config.indicateTypos ? `<hint>${input[i]}</hint>` : "") +
           "</letter>";
@@ -407,7 +379,12 @@ export function updateWordElement(showError = !Config.blindMode) {
         } else if (currentWord[i] === "\n") {
           ret += `<letter class='nlChar'><i class="fas fa-angle-down"></i></letter>`;
         } else {
-          ret += "<letter>" + currentWord[i] + "</letter>";
+          ret +=
+            `<letter class="${
+              Config.highlightMode == "word" ? wordHighlightClassString : ""
+            }">` +
+            currentWord[i] +
+            "</letter>";
         }
       }
     }
@@ -527,7 +504,10 @@ export function updateModesNotice() {
     );
   }
 
-  if (Config.paceCaret !== "off") {
+  if (
+    Config.paceCaret !== "off" ||
+    (Config.repeatedPace && TestLogic.isPaceRepeat)
+  ) {
     let speed = "";
     try {
       speed = ` (${Math.round(PaceCaret.settings.wpm)} wpm)`;
@@ -538,6 +518,8 @@ export function updateModesNotice() {
           ? "average"
           : Config.paceCaret === "pb"
           ? "pb"
+          : Config.paceCaret == "repeat"
+          ? "repeated"
           : "custom"
       } pace${speed}</div>`
     );
@@ -803,7 +785,7 @@ export function highlightBadWord(index, showError) {
   $($("#words .word")[index]).addClass("error");
 }
 
-$(document.body).on("click", "#copyResultToClipboardButton", () => {
+$(document.body).on("click", "#saveScreenshotButton", () => {
   screenshot();
 });
 

@@ -193,6 +193,10 @@ async function initGroups() {
       }
     }
   );
+  groups.repeatedPace = new SettingsGroup(
+    "repeatedPace",
+    UpdateConfig.setRepeatedPace
+  );
   groups.minWpm = new SettingsGroup("minWpm", UpdateConfig.setMinWpm, () => {
     if (Config.minWpm === "custom") {
       $(".pageSettings .section.minWpm input.customMinWpmSpeed").removeClass(
@@ -455,7 +459,7 @@ function refreshTagsSettingsSection() {
       tagsEl.append(`
         <div class="tag" id="${tag.id}">
             <div class="active" active="${tag.active}">
-                <i class="fas fa-check-square"></i>
+                <i class="fas fa-${tag.active ? "check-" : ""}square"></i>
             </div>
             <div class="title">${tag.name}</div>
             <div class="editButton"><i class="fas fa-pen"></i></div>
