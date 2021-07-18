@@ -123,7 +123,7 @@ function backspaceToPrevious() {
   TestLogic.input.currentWord = TestLogic.input.popHistory();
   TestLogic.corrected.popHistory();
 
-  if (Funbox.active === "nospace") {
+  if (Config.funbox === "nospace") {
     TestLogic.input.currentWord = TestLogic.input.currentWord.slice(0, -1);
   }
 
@@ -160,7 +160,7 @@ function handleSpace() {
   }
 
   let currentWord = TestLogic.words.getCurrent();
-  if (Funbox.active === "layoutfluid" && Config.mode !== "time") {
+  if (Config.funbox === "layoutfluid" && Config.mode !== "time") {
     // here I need to check if Config.customLayoutFluid exists because of my scuffed solution of returning whenever value is undefined in the setCustomLayoutfluid function
     const layouts = Config.customLayoutfluid
       ? Config.customLayoutfluid.split("#")
@@ -198,12 +198,12 @@ function handleSpace() {
     Caret.updatePosition();
     TestStats.incrementKeypressCount();
     TestStats.pushKeypressWord(TestLogic.words.currentIndex);
-    if (Funbox.active !== "nospace") {
+    if (Config.funbox !== "nospace") {
       Sound.playClick(Config.playSoundOnClick);
     }
     Replay.addReplayEvent("submitCorrectWord");
   } else {
-    if (Funbox.active !== "nospace") {
+    if (Config.funbox !== "nospace") {
       if (!Config.playSoundOnError || Config.blindMode) {
         Sound.playClick(Config.playSoundOnClick);
       } else {
@@ -378,7 +378,7 @@ function handleLastChar() {
   let char =
     TestLogic.input.currentWord[TestLogic.input.currentWord.length - 1];
 
-  if (char === "\n" && Funbox.active === "58008") {
+  if (char === "\n" && Config.funbox === "58008") {
     char = " ";
   }
 
@@ -547,7 +547,7 @@ function handleLastChar() {
 
   //simulate space press in nospace funbox
   if (
-    (Funbox.active === "nospace" &&
+    (Config.funbox === "nospace" &&
       TestLogic.input.currentWord.length ===
         TestLogic.words.getCurrent().length) ||
     (char === "\n" && thisCharCorrect)

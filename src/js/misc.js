@@ -727,4 +727,15 @@ export function setCharAt(str, index, chr) {
   return str.substring(0, index) + chr + str.substring(index + 1);
 }
 
+//https://www.reddit.com/r/learnjavascript/comments/8ohug3/how_to_recursively_count_keys_in_an_object/e03fytn/
+function countAllKeys(obj) {
+  if (typeof obj !== "object" || obj === null) {
+    return 0;
+  }
+  const keys = Object.keys(obj);
+  let sum = keys.length;
+  keys.forEach((key) => (sum += countAllKeys(obj[key])));
+  return sum;
+}
+
 export const trailingComposeChars = /[\u02B0-\u02FF`´^¨~]+$|⎄.*$/;
