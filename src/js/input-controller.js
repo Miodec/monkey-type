@@ -20,6 +20,7 @@ import * as TimerProgress from "./timer-progress";
 import * as TestTimer from "./test-timer";
 import * as Focus from "./focus";
 import * as ShiftTracker from "./shift-tracker";
+import * as Replay from "./replay.js";
 
 let dontInsertSpace = false;
 let isCapsLockHeld = false;
@@ -49,7 +50,8 @@ function handleTab(event) {
   } else if (
     !TestUI.resultCalculating &&
     $("#commandLineWrapper").hasClass("hidden") &&
-    $("#simplePopupWrapper").hasClass("hidden")
+    $("#simplePopupWrapper").hasClass("hidden") &&
+    !$(".page.pageLogin").hasClass("active")
   ) {
     if ($(".pageTest").hasClass("active")) {
       if (Config.quickTab) {
@@ -129,6 +131,7 @@ function setupBackspace(event) {
   }
 
   TestLogic.words.decreaseCurrentIndex();
+  Replay.addReplayEvent("backWord");
   TestUI.setCurrentWordElementIndex(TestUI.currentWordElementIndex - 1);
   TestUI.updateActiveElement(true);
   Funbox.toggleScript(TestLogic.words.getCurrent());
@@ -164,10 +167,15 @@ function handleSpace() {
 
   let currentWord = TestLogic.words.getCurrent();
   if (Funbox.active === "layoutfluid" && Config.mode !== "time") {
-    const layouts = ["qwerty", "dvorak", "colemak"];
+    // here I need to check if Config.customLayoutFluid exists because of my scuffed solution of returning whenever value is undefined in the setCustomLayoutfluid function
+    const layouts = Config.customLayoutfluid
+      ? Config.customLayoutfluid.split("#")
+      : ["qwerty", "dvorak", "colemak"];
     let index = 0;
     let outof = TestLogic.words.length;
-    index = Math.floor((TestLogic.input.history.length + 1) / (outof / 3));
+    index = Math.floor(
+      (TestLogic.input.history.length + 1) / (outof / layouts.length)
+    );
     if (Config.layout !== layouts[index] && layouts[index] !== undefined) {
       Notifications.add(`--- !!! ${layouts[index]} !!! ---`, 0);
     }
@@ -189,6 +197,7 @@ function handleSpace() {
   PaceCaret.handleSpace(isWordCorrect, currentWord);
   TestStats.incrementAccuracy(isWordCorrect);
   if (isWordCorrect) {
+    Replay.addReplayEvent("submitCorrectWord");
     TestLogic.words.increaseCurrentIndex();
     TestUI.setCurrentWordElementIndex(TestUI.currentWordElementIndex + 1);
     TestUI.updateActiveElement();
@@ -200,6 +209,7 @@ function handleSpace() {
       Sound.playClick(Config.playSoundOnClick);
     }
   } else {
+    Replay.addReplayEvent("submitErrorWord");
     if (Funbox.active !== "nospace") {
       if (!Config.playSoundOnError || Config.blindMode) {
         Sound.playClick(Config.playSoundOnClick);
@@ -241,12 +251,12 @@ function handleSpace() {
     Caret.updatePosition();
     TestStats.incrementKeypressCount();
     TestStats.pushKeypressWord(TestLogic.words.currentIndex);
+    TestStats.updateLastKeypress();
     if (Config.difficulty == "expert" || Config.difficulty == "master") {
       TestLogic.fail();
       return;
     } else if (TestLogic.words.currentIndex == TestLogic.words.length) {
       //submitted last word that is incorrect
-      TestStats.setLastSecondNotRound();
       TestLogic.finish();
       return;
     }
@@ -411,8 +421,11 @@ function handleLastChar() {
   TestStats.incrementAccuracy(thisCharCorrect);
 
   if (!thisCharCorrect) {
+    Replay.addReplayEvent("incorrectLetter", event.key);
     TestStats.incrementKeypressErrors();
     TestStats.pushMissedWord(TestLogic.words.getCurrent());
+  } else {
+    Replay.addReplayEvent("correctLetter", event.key);
   }
 
   if (thisCharCorrect) {
@@ -449,6 +462,7 @@ function handleLastChar() {
   }
 
   TestStats.incrementKeypressCount();
+  TestStats.updateLastKeypress();
   TestStats.pushKeypressWord(TestLogic.words.currentIndex);
 
   if (Config.stopOnError == "letter" && !thisCharCorrect) {
@@ -509,7 +523,6 @@ function handleLastChar() {
     ) {
       TestLogic.input.pushHistory();
       TestLogic.corrected.pushHistory();
-      TestStats.setLastSecondNotRound();
       TestLogic.finish();
     }
   }
@@ -726,6 +739,7 @@ $wordsInput.on("beforeinput", function (event) {
 $wordsInput.on("input", function (event) {
   if (TestUI.testRestarting) return;
 
+  // TODO: trigger replay events correctly (clearWord, deleteLetter)
   if (TestLogic.input.currentWord.length >= inputWordBeforeChange.length) {
     handleLastChar();
   }
