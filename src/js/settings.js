@@ -668,23 +668,7 @@ $(
 
 $(".pageSettings .section.discordIntegration #unlinkDiscordButton").click(
   (e) => {
-    if (confirm("Are you sure?")) {
-      Loader.show();
-      CloudFunctions.unlinkDiscord({
-        uid: firebase.auth().currentUser.uid,
-      }).then((ret) => {
-        Loader.hide();
-        console.log(ret);
-        if (ret.data.status === 1) {
-          DB.getSnapshot().discordId = null;
-          Notifications.add("Accounts unlinked", 0);
-          updateDiscordSection();
-        } else {
-          Notifications.add("Something went wrong: " + ret.data.message, -1);
-          updateDiscordSection();
-        }
-      });
-    }
+    SimplePopups.list.unlinkDiscord.show();
   }
 );
 
@@ -775,12 +759,7 @@ $(document).on(
 );
 
 $("#resetSettingsButton").click((e) => {
-  if (confirm("Press OK to confirm.")) {
-    UpdateConfig.reset();
-    setTimeout(() => {
-      location.reload();
-    }, 1000);
-  }
+  SimplePopups.list.resetSettings.show();
 });
 
 $("#exportSettingsButton").click((e) => {
@@ -808,6 +787,10 @@ $(".pageSettings #resetPersonalBestsButton").on("click", (e) => {
 
 $(".pageSettings #updateAccountEmail").on("click", (e) => {
   SimplePopups.list.updateEmail.show();
+});
+
+$(".pageSettings #updateAccountPassword").on("click", (e) => {
+  SimplePopups.list.updatePassword.show();
 });
 
 $(".pageSettings .section.customBackgroundSize .inputAndButton .save").on(

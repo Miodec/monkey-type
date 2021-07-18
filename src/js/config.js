@@ -1760,10 +1760,7 @@ export function apply(configObj) {
 }
 
 export function reset() {
-  config = {
-    ...defaultConfig,
-  };
-  apply();
+  apply(defaultConfig);
   saveToLocalStorage();
 }
 
@@ -1783,7 +1780,7 @@ export function loadFromLocalStorage() {
     saveToLocalStorage(true);
     console.log("saving localStorage config");
   }
-  TestLogic.restart(false, true);
+  // TestLogic.restart(false, true);
   loadDone();
 }
 

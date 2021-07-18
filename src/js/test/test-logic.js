@@ -272,7 +272,7 @@ export function punctuateWord(previousWord, currentWord, index, maxindex) {
       Math.random() < 0.25 &&
       Config.language.split("_")[0] == "code"
     ) {
-      let specials = ["{", "}", "[", "]", "(", ")", ";", "=", "%", "/"];
+      let specials = ["{", "}", "[", "]", "(", ")", ";", "=", "+", "%", "/"];
 
       word = specials[Math.floor(Math.random() * 10)];
     }
@@ -427,20 +427,29 @@ export async function init() {
         const previousWord2 = words.get(i - 2);
         if (
           Config.mode == "custom" &&
-          (CustomText.isWordRandom || CustomText.isTimeRandom)
+          !CustomText.isWordRandom &&
+          !CustomText.isTimeRandom
+        ) {
+          randomWord = CustomText.text[i];
+        } else if (
+          Config.mode == "custom" &&
+          (wordset.length < 3 || PractiseMissed.before.mode !== null)
         ) {
           randomWord = wordset[Math.floor(Math.random() * wordset.length)];
-        } else if (Config.mode == "custom" && !CustomText.isWordRandom) {
-          randomWord = CustomText.text[i];
-        } else {
+        } else  {
           while (
             randomWord == previousWord ||
             randomWord == previousWord2 ||
             (!Config.punctuation && randomWord == "I") ||
             randomWord.indexOf(" ") > -1
           ) {
+            console.log('rerandomising');
             randomWord = wordset[Math.floor(Math.random() * wordset.length)];
           }
+        }
+
+        if (randomWord === undefined) {
+          randomWord = wordset[Math.floor(Math.random() * wordset.length)];
         }
 
         if (Config.funbox === "rAnDoMcAsE") {
@@ -677,6 +686,11 @@ export function restart(
     PractiseMissed.resetBefore();
   }
 
+  let repeatWithPace = false;
+  if (TestUI.resultVisible) {
+    repeatWithPace = true;
+  }
+
   ManualRestart.reset();
   TestTimer.clear();
   TestStats.restart();
@@ -730,13 +744,13 @@ export function restart(
       $("#typingTest").css("opacity", 0).removeClass("hidden");
       if (!withSameWordset) {
         setRepeated(false);
-        setPaceRepeat(false);
+        if (repeatWithPace) setPaceRepeat(false);
         setHasTab(false);
         await init();
         PaceCaret.init(nosave);
       } else {
         setRepeated(true);
-        setPaceRepeat(true);
+        if (repeatWithPace) setPaceRepeat(true);
         setActive(false);
         Replay.stopReplayRecording();
         words.resetCurrentIndex();
@@ -871,7 +885,7 @@ export function calculateWpmAndRaw() {
   };
 }
 
-export function addWord() {
+export async function addWord() {
   let bound = 100;
   if (Config.funbox === "plus_one") bound = 1;
   if (Config.funbox === "plus_two") bound = 2;
@@ -891,10 +905,10 @@ export function addWord() {
     return;
   const language =
     Config.mode !== "custom"
-      ? Misc.getCurrentLanguage()
+      ? await Misc.getCurrentLanguage()
       : {
           //borrow the direction of the current language
-          leftToRight: Misc.getCurrentLanguage().leftToRight,
+          leftToRight: await Misc.getCurrentLanguage().leftToRight,
           words: CustomText.text,
         };
   const wordset = language.words;
@@ -910,11 +924,15 @@ export function addWord() {
 
   if (
     Config.mode === "custom" &&
-    CustomText.isWordRandom &&
+    (CustomText.isWordRandom || CustomText.isTimeRandom) &&
     wordset.length < 3
   ) {
     randomWord = wordset[Math.floor(Math.random() * wordset.length)];
-  } else if (Config.mode == "custom" && !CustomText.isWordRandom) {
+  } else if (
+    Config.mode == "custom" &&
+    !CustomText.isWordRandom &&
+    !CustomText.isTimeRandom
+  ) {
     randomWord = CustomText.text[words.length];
   } else {
     while (
@@ -925,6 +943,10 @@ export function addWord() {
     ) {
       randomWord = wordset[Math.floor(Math.random() * wordset.length)];
     }
+  }
+
+  if (randomWord === undefined) {
+    randomWord = wordset[Math.floor(Math.random() * wordset.length)];
   }
 
   if (Config.funbox === "rAnDoMcAsE") {

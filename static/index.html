@@ -1099,6 +1099,11 @@
           </div>
         </div>
         <div id="middle">
+          <div class="page pageLoading hidden">
+            <div class="preloader">
+              <i class="fas fa-fw fa-spin fa-circle-notch"></i>
+            </div>
+          </div>
           <div class="page pageTest hidden">
             <div id="typingTest">
               <div id="capsWarning" class="hidden">
@@ -1684,7 +1689,7 @@
                   target="_blank"
                 >
                   <div class="fab fa-github"></div>
-                  Github
+                  GitHub
                 </a>
               </div>
             </div>
@@ -3774,6 +3779,20 @@
                   </div>
                 </div>
               </div>
+              <div class="section updateAccountPassword">
+                <h1>update account password</h1>
+                <div class="text">Change the password you use to sign in.</div>
+                <div class="buttons">
+                  <div
+                    class="button off danger"
+                    id="updateAccountPassword"
+                    tabindex="0"
+                    onclick="this.blur();"
+                  >
+                    update password
+                  </div>
+                </div>
+              </div>
               <div class="section deleteAccount hidden">
                 <h1>delete account</h1>
                 <div class="text">
@@ -4321,14 +4340,14 @@
     </div>
   </body>
   <!-- The core Firebase JS SDK is always required and must be listed first -->
-  <script src="/__/firebase/8.0.2/firebase-app.js"></script>
+  <script src="/__/firebase/8.4.2/firebase-app.js"></script>
 
   <!-- TODO: Add SDKs for Firebase products that you want to use
      https://firebase.google.com/docs/web/setup#available-libraries -->
-  <script src="/__/firebase/8.0.2/firebase-analytics.js"></script>
-  <script src="/__/firebase/8.0.2/firebase-auth.js"></script>
-  <script src="/__/firebase/8.0.2/firebase-firestore.js"></script>
-  <script src="/__/firebase/8.0.2/firebase-functions.js"></script>
+  <script src="/__/firebase/8.4.2/firebase-analytics.js"></script>
+  <script src="/__/firebase/8.4.2/firebase-auth.js"></script>
+  <script src="/__/firebase/8.4.2/firebase-firestore.js"></script>
+  <script src="/__/firebase/8.4.2/firebase-functions.js"></script>
 
   <!-- Initialize Firebase -->
   <script src="/__/firebase/init.js"></script>
