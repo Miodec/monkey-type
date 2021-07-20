@@ -9,8 +9,8 @@ TODO:
         signature or verfication field should be able to check file validity with server
     And add ability to upload file to watch replay
 */
-import config from './config';
-import * as Sound from './sound';
+import config from "./config";
+import * as Sound from "./sound";
 
 let wordsList = [];
 let replayData = [];
@@ -72,14 +72,14 @@ export function pauseReplay() {
   toggleButton.parentNode.setAttribute("aria-label", "Resume replay");
 }
 
-function playSound(error = false){
-  if(error){
-    if(config.playSoundOnError){
+function playSound(error = false) {
+  if (error) {
+    if (config.playSoundOnError) {
       Sound.playError();
-    }else{
+    } else {
       Sound.playClick();
     }
-  }else{
+  } else {
     Sound.playClick();
   }
 }
@@ -97,21 +97,24 @@ function handleDisplayLogic(item) {
       //if letter is an extra
       myElement = document.createElement("letter");
       myElement.classList.add("extra");
-      myElement.innerHTML = item.letter;
+      myElement.innerHTML = item.value;
       activeWord.appendChild(myElement);
     }
     myElement = activeWord.children[curPos];
     myElement.classList.add("incorrect");
     curPos++;
-  } else if (item.action === "deleteLetter") {
+  } else if (item.action === "setWordLetterIndex") {
     playSound();
-    let myElement = activeWord.children[curPos - 1];
-    if (myElement.classList.contains("extra")) {
-      myElement.remove();
-    } else {
-      myElement.className = "";
+    curPos = item.value;
+    // remove all letters from cursor to end of word
+    for (let i = curPos; i < activeWord.children.length; i++) {
+      let myElement = activeWord.children[i];
+      if (myElement.classList.contains("extra")) {
+        myElement.remove();
+      } else {
+        myElement.className = "";
+      }
     }
-    curPos--;
   } else if (item.action === "submitCorrectWord") {
     playSound();
     wordPos++;
@@ -120,15 +123,6 @@ function handleDisplayLogic(item) {
     playSound(true);
     activeWord.classList.add("error");
     wordPos++;
-    curPos = 0;
-  } else if (item.action === "clearWord") {
-    playSound();
-    let promptWord = document.createElement("div");
-    let wordArr = wordsList[wordPos].split("");
-    wordArr.forEach((letter) => {
-      promptWord.innerHTML += `<letter>${letter}</letter>`;
-    });
-    activeWord.innerHTML = promptWord.innerHTML;
     curPos = 0;
   } else if (item.action === "backWord") {
     playSound();
@@ -206,16 +200,13 @@ function stopReplayRecording() {
   replayRecording = false;
 }
 
-function addReplayEvent(action, letter = undefined) {
-  if (replayRecording === false) {
+function addReplayEvent(action, value) {
+  if (!replayRecording) {
     return;
   }
+
   let timeDelta = performance.now() - replayStartTime;
-  if (action === "incorrectLetter" || action === "correctLetter") {
-    replayData.push({ action: action, letter: letter, time: timeDelta });
-  } else {
-    replayData.push({ action: action, time: timeDelta });
-  }
+  replayData.push({ action: action, value: value, time: timeDelta });
 }
 
 function playReplay() {

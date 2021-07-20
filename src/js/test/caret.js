@@ -35,7 +35,10 @@ export async function updatePosition() {
 
   let caret = $("#caret");
 
-  let inputLen = TestLogic.input.current.length;
+  let inputLen = TestLogic.input.currentWord.length;
+  inputLen = Misc.trailingComposeChars.test(TestLogic.input.currentWord)
+    ? TestLogic.input.currentWord.search(Misc.trailingComposeChars) + 1
+    : inputLen;
   let currentLetterIndex = inputLen - 1;
   if (currentLetterIndex == -1) {
     currentLetterIndex = 0;

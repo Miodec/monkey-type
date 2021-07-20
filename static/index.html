@@ -1122,7 +1122,14 @@
               <div id="testModesNotice"></div>
               <div id="caret" class="default size15"></div>
               <div id="paceCaret" class="default size15 hidden"></div>
-              <input id="wordsInput" class="" tabindex="0" autocomplete="off" />
+              <textarea
+                id="wordsInput"
+                class=""
+                tabindex="0"
+                autocomplete="off"
+                autocapitalize="none"
+                autocorrect="off"
+              ></textarea>
               <div id="timerNumber" class="timerMain">
                 <div>60</div>
               </div>
@@ -2646,18 +2653,6 @@
                 <div class="text">
                   Swap the behavior of tab and escape keys.
                 </div>
-                <div class="buttons">
-                  <div class="button off" tabindex="0" onclick="this.blur();">
-                    off
-                  </div>
-                  <div class="button on" tabindex="0" onclick="this.blur();">
-                    on
-                  </div>
-                </div>
-              </div>
-              <div class="section capsLockBackspace">
-                <h1>caps lock backspace</h1>
-                <div class="text">Makes caps lock act like backspace.</div>
                 <div class="buttons">
                   <div class="button off" tabindex="0" onclick="this.blur();">
                     off

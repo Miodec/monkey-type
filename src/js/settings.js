@@ -194,10 +194,6 @@ async function initGroups() {
     "smoothLineScroll",
     UpdateConfig.setSmoothLineScroll
   );
-  groups.capsLockBackspace = new SettingsGroup(
-    "capsLockBackspace",
-    UpdateConfig.setCapsLockBackspace
-  );
   groups.layout = new SettingsGroup("layout", UpdateConfig.setLayout);
   groups.language = new SettingsGroup("language", UpdateConfig.setLanguage);
   groups.fontSize = new SettingsGroup("fontSize", UpdateConfig.setFontSize);

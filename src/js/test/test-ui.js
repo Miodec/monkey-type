@@ -13,6 +13,7 @@ import * as Commandline from "./commandline";
 import * as OutOfFocus from "./out-of-focus";
 import * as ManualRestart from "./manual-restart-tracker";
 import * as PractiseMissed from "./practise-missed";
+import * as Misc from "./misc";
 import * as Replay from "./replay";
 import * as TestStats from "./test-stats";
 import * as Misc from "./misc";
@@ -151,8 +152,8 @@ export function showWords() {
         TestLogic.words
           .getCurrent()
           .substring(
-            TestLogic.input.current.length,
-            TestLogic.input.current.length + 1
+            TestLogic.input.currentWord.length,
+            TestLogic.input.currentWord.length + 1
           )
           .toString()
           .toUpperCase()
@@ -265,10 +266,8 @@ export function screenshot() {
   }, 3000);
 }
 
-export function updateWordElement(showError) {
-  // if (Config.mode == "zen") return;
-
-  let input = TestLogic.input.current;
+export function updateWordElement(showError = !Config.blindMode) {
+  let input = TestLogic.input.currentWord;
   let wordAtIndex;
   let currentWord;
   wordAtIndex = document.querySelector("#words .word.active");
@@ -278,35 +277,38 @@ export function updateWordElement(showError) {
   let newlineafter = false;
 
   if (Config.mode === "zen") {
-    for (let i = 0; i < TestLogic.input.current.length; i++) {
-      if (TestLogic.input.current[i] === "\t") {
+    for (let i = 0; i < TestLogic.input.currentWord.length; i++) {
+      if (TestLogic.input.currentWord[i] === "\t") {
         ret += `<letter class='tabChar correct'><i class="fas fa-long-arrow-alt-right"></i></letter>`;
-      } else if (TestLogic.input.current[i] === "\n") {
+      } else if (TestLogic.input.currentWord[i] === "\n") {
         newlineafter = true;
         ret += `<letter class='nlChar correct'><i class="fas fa-angle-down"></i></letter>`;
       } else {
-        ret +=
-          `<letter class="correct">` + TestLogic.input.current[i] + `</letter>`;
+        ret += `<letter class="correct">${TestLogic.input.currentWord[i]}</letter>`;
       }
     }
   } else {
     let correctSoFar = false;
-    if (currentWord.slice(0, input.length) == input) {
-      // this is when input so far is correct
+
+    // slice earlier if input has trailing compose characters
+    const inputWithoutComposeLength = Misc.trailingComposeChars.test(input)
+      ? input.search(Misc.trailingComposeChars)
+      : input.length;
+    if (
+      input.search(Misc.trailingComposeChars) < currentWord.length &&
+      currentWord.slice(0, inputWithoutComposeLength) ===
+        input.slice(0, inputWithoutComposeLength)
+    ) {
       correctSoFar = true;
     }
+
     let wordHighlightClassString = correctSoFar ? "correct" : "incorrect";
     if (Config.blindMode) {
       wordHighlightClassString = "correct";
     }
 
     for (let i = 0; i < input.length; i++) {
-      let charCorrect;
-      if (currentWord[i] == input[i]) {
-        charCorrect = true;
-      } else {
-        charCorrect = false;
-      }
+      let charCorrect = currentWord[i] == input[i];
 
       let correctClass = "correct";
       if (Config.highlightMode == "off") {
@@ -324,51 +326,64 @@ export function updateWordElement(showError) {
         currentLetter = `<i class="fas fa-angle-down"></i>`;
       }
 
+      if (
+        Misc.trailingComposeChars.test(input) &&
+        i > input.search(Misc.trailingComposeChars)
+      )
+        continue;
+
       if (charCorrect) {
         ret += `<letter class="${
           Config.highlightMode == "word"
             ? wordHighlightClassString
             : correctClass
         } ${tabChar}${nlChar}">${currentLetter}</letter>`;
-      } else {
-        if (!showError) {
-          if (currentLetter !== undefined) {
-            ret += `<letter class="${
-              Config.highlightMode == "word"
-                ? wordHighlightClassString
-                : correctClass
-            } ${tabChar}${nlChar}">${currentLetter}</letter>`;
-          }
-        } else {
-          if (currentLetter == undefined) {
-            if (!Config.hideExtraLetters) {
-              let letter = input[i];
-              if (letter == " " || letter == "\t" || letter == "\n") {
-                letter = "_";
-              }
-              ret += `<letter class="${
-                Config.highlightMode == "word"
-                  ? wordHighlightClassString
-                  : "incorrect"
-              } extra ${tabChar}${nlChar}">${letter}</letter>`;
-            }
-          } else {
-            ret +=
-              `<letter class="${
-                Config.highlightMode == "word"
-                  ? wordHighlightClassString
-                  : "incorrect"
-              } ${tabChar}${nlChar}">` +
-              currentLetter +
-              (Config.indicateTypos ? `<hint>${input[i]}</hint>` : "") +
-              "</letter>";
-          }
+      } else if (
+        currentLetter !== undefined &&
+        Misc.trailingComposeChars.test(input) &&
+        i === input.search(Misc.trailingComposeChars)
+      ) {
+        ret += `<letter class="${
+          Config.highlightMode == "word" ? wordHighlightClassString : ""
+        } dead">${currentLetter}</letter>`;
+      } else if (!showError) {
+        if (currentLetter !== undefined) {
+          ret += `<letter class="${
+            Config.highlightMode == "word"
+              ? wordHighlightClassString
+              : correctClass
+          } ${tabChar}${nlChar}">${currentLetter}</letter>`;
         }
+      } else if (currentLetter === undefined) {
+        if (!Config.hideExtraLetters) {
+          let letter = input[i];
+          if (letter == " " || letter == "\t" || letter == "\n") {
+            letter = "_";
+          }
+          ret += `<letter class="${
+            Config.highlightMode == "word"
+              ? wordHighlightClassString
+              : "incorrect"
+          } extra ${tabChar}${nlChar}">${letter}</letter>`;
+        }
+      } else {
+        ret +=
+          `<letter class="${
+            Config.highlightMode == "word"
+              ? wordHighlightClassString
+              : "incorrect"
+          } ${tabChar}${nlChar}">` +
+          currentLetter +
+          (Config.indicateTypos ? `<hint>${input[i]}</hint>` : "") +
+          "</letter>";
       }
     }
 
-    if (input.length < currentWord.length) {
-      for (let i = input.length; i < currentWord.length; i++) {
+    const inputWithSingleComposeLength = Misc.trailingComposeChars.test(input)
+      ? input.search(Misc.trailingComposeChars) + 1
+      : input.length;
+    if (inputWithSingleComposeLength < currentWord.length) {
+      for (let i = inputWithSingleComposeLength; i < currentWord.length; i++) {
         if (currentWord[i] === "\t") {
           ret += `<letter class='tabChar'><i class="fas fa-long-arrow-alt-right"></i></letter>`;
         } else if (currentWord[i] === "\n") {
@@ -725,7 +740,7 @@ async function loadWordsHistory() {
                 "</letter>";
             }
           } else {
-            if (input[c] === TestLogic.input.current) {
+            if (input[c] === TestLogic.input.currentWord) {
               wordEl +=
                 `<letter class='correct ${extraCorrected}'>` +
                 word[c] +
@@ -956,7 +971,7 @@ $("#wordsInput").on("focus", () => {
   if (!resultVisible && Config.showOutOfFocusWarning) {
     OutOfFocus.hide();
   }
-  Caret.show(TestLogic.input.current);
+  Caret.show(TestLogic.input.currentWord);
 });
 
 $("#wordsInput").on("focusout", () => {
