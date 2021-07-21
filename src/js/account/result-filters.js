@@ -60,6 +60,10 @@ let defaultResultFilters = {
   funbox: {
     none: true,
   },
+  filterSettings: {
+    all: true,
+    current: false,
+  },
 };
 
 export let filters = defaultResultFilters;
@@ -149,7 +153,7 @@ export function updateActive() {
         aboveChartDisplay[group].all = false;
       }
       let buttonEl;
-      if (group === "date") {
+      if (group === "date" || group === "filterSettings") {
         buttonEl = $(
           `.pageAccount .group.topFilters .filterGroup[group="${group}"] .button[filter="${filter}"]`
         );
@@ -356,7 +360,7 @@ $(
 $(".pageAccount .topFilters .button.allFilters").click((e) => {
   Object.keys(getFilters()).forEach((group) => {
     Object.keys(getGroup(group)).forEach((filter) => {
-      if (group === "date") {
+      if (group === "date" || group === "filterSettings") {
         filters[group][filter] = false;
       } else {
         filters[group][filter] = true;
@@ -364,6 +368,7 @@ $(".pageAccount .topFilters .button.allFilters").click((e) => {
     });
   });
   filters["date"]["all"] = true;
+  filters["filterSettings"]["all"] = true;
   updateActive();
   save();
 });
@@ -417,6 +422,7 @@ $(".pageAccount .topFilters .button.currentConfigFilter").click((e) => {
   });
 
   filters["date"]["all"] = true;
+  filters["filterSettings"]["current"] = true;
   updateActive();
   save();
   console.log(getFilters());
